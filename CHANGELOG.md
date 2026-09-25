@@ -2,7 +2,7 @@
 
 One section per release, plus a line for every monthly check (UPDATING.md, step 7).
 
-## 2026.09.0 — unreleased
+## 2026.09.0 — 2026-09-25
 
 First OwnTV build, forked from jarnedemeulemeester/libmpv-android `8687e8c` (after its 1.0.0).
 
