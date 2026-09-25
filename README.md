@@ -17,8 +17,8 @@ player code does not know the difference.
 | What OwnTV needs | Upstream — jarnedemeulemeester/libmpv-android 1.0.0 | **Ours — OwnTV libmpv** |
 |---|---|---|
 | **The newest mpv.** mpv makes no bug-fix releases; every fix after a release is only on its main branch | 0.41.0 (December 2025) | **newest main branch, checked and updated every month** |
-| **Interlaced TV channels without comb lines** (mpv's automatic deinterlacing) | ❌ does not work — the needed FFmpeg filter is missing | ✅ works |
-| **Night mode and volume levelling on the mpv player** | ❌ plays silence — FFmpeg filters are missing | ✅ available |
+| **Interlaced TV channels without comb lines** (mpv's automatic deinterlacing) | ❌ does not work — the needed FFmpeg filter is missing | ✅ works (OwnTV already asks for it) |
+| **Night mode and volume levelling on the mpv player** | ❌ plays silence — FFmpeg filters are missing | ✅ supported by the engine (OwnTV uses it from P15c-3) |
 | **Recovery from a frozen stream** — OwnTV starts a fresh player while the frozen one is still shutting down | ✅ | ✅ (same code as upstream) |
 | **Newest FFmpeg** (the part that opens and decodes the streams) | 8.1 | **9.0.2** |
 | **Rebuildable exactly** — every ingredient pinned to a fixed version | ✅ | ✅ |
