@@ -15,7 +15,7 @@ on:
         type: string
         default: ""
       publish-version:
-        description: "When set (YYYY.MM.N), publish the AAR to GitHub Packages under this version"
+        description: "When set (YYYY.MM.N), publish the AAR to OwnTV's public Maven repository under this version"
         type: string
         default: ""
 
@@ -31,7 +31,6 @@ jobs:
     timeout-minutes: 180
     permissions:
       contents: read
-      packages: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -83,8 +82,13 @@ jobs:
             libmpv/build/outputs/aar/libmpv-release.aar
             contract.txt
 
-      - name: Publish to GitHub Packages
+      # Into OwnTV's public Maven repository (the gh-pages branch of OwnTV_Core, served at
+      # https://ahxn00.github.io/OwnTV_Core/maven). CORE_BUMP_TOKEN can write to OwnTV_Core; the
+      # built-in token cannot. Keeps the newest 12 versions (~35 MB each; Pages sites cap at 1 GB).
+      - name: Publish to the OwnTV Maven repository
         if: ${{ inputs.publish-version != '' }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./gradlew :libmpv:publishReleasePublicationToGitHubPackagesRepository -PlibVersion=${{ inputs.publish-version }}
+          PAGES_TOKEN: ${{ secrets.CORE_BUMP_TOKEN }}
+        run: |
+          ./gradlew :libmpv:publishReleasePublicationToStagingRepository -PlibVersion=${{ inputs.publish-version }}
+          python3 tools/publish_pages.py build/staging-maven --keep libmpv=12

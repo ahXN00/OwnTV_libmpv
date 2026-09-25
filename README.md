@@ -1,7 +1,8 @@
 # OwnTV libmpv
 
 The mpv engine inside OwnTV, packaged as an Android library: **libmpv + FFmpeg + the Kotlin/JNI
-wrapper**, published as `tv.own.owntv:libmpv` to GitHub Packages and consumed by
+wrapper**, published as `tv.own.owntv:libmpv` to OwnTV's public Maven repository
+(https://ahxn00.github.io/OwnTV_Core/maven, no login needed) and consumed by
 [OwnTV Core](https://github.com/ahXN00/OwnTV_Core)'s `:player-core`. Both OwnTV apps (TV and mobile) get
 it through core; neither app declares it.
 
@@ -38,7 +39,7 @@ The "ours" column changes with every release — update it in the same commit as
 | libplacebo · libass · dav1d | — | 7.360.1 · 0.17.4 · 1.5.3 | 7.360.1 · 0.17.5 · 1.5.4 |
 | Several instances at once | — | yes | yes (same JNI) |
 | ABIs | — | armeabi-v7a, arm64-v8a, x86, x86_64 | armeabi-v7a, arm64-v8a, x86_64 |
-| Published as | — | `dev.jdtech.mpv:libmpv` (Maven Central) | `tv.own.owntv:libmpv` (GitHub Packages) |
+| Published as | — | `dev.jdtech.mpv:libmpv` (Maven Central) | `tv.own.owntv:libmpv` (OwnTV Maven, no login) |
 | How often it moves | a release every 6–9 months | when its maintainer tags (5 releases in 27 months) | **monthly** ([UPDATING.md](UPDATING.md)) |
 
 ## What is inside
@@ -63,9 +64,10 @@ Every version is pinned in [`buildscripts/include/depinfo.sh`](buildscripts/incl
 | `buildscripts/include/download-deps.sh` | mpv cloned blobless + checkout of the pinned commit |
 | `buildscripts/scripts/ffmpeg.sh` | filter allowlist, `mpegts`/`matroska` muxers |
 | `buildscripts/build.sh` | no 32-bit x86 |
-| `libmpv/build.gradle.kts`, `build.gradle.kts`, `gradle/libs.versions.toml` | publishes `tv.own.owntv:libmpv` to GitHub Packages instead of Maven Central; `abiFilters` |
+| `libmpv/build.gradle.kts`, `build.gradle.kts`, `gradle/libs.versions.toml` | publishes `tv.own.owntv:libmpv` to OwnTV's Maven repository instead of Maven Central; `abiFilters` |
 | `renovate.json` | the mpv rule removed (mpv is bumped by the monthly workflow) |
 | `tools/inspect_aar.py` | new — the build contract |
+| `tools/publish_pages.py` | new — writes into OwnTV's Maven repository (identical copy in OwnTV_Core) |
 | `.github/workflows/*` | `build`, `publish`, `monthly-update` (upstream's `publish.yaml` removed) |
 
 Keep this table true: it is what makes an `upstream` merge reviewable.
@@ -102,24 +104,23 @@ the same month). Push the tag `vYYYY.MM.N` on `main`:
 
 1. `publish.yaml` checks the tag format,
 2. runs the full build and contract check (the same `build.yaml` as every push),
-3. publishes `tv.own.owntv:libmpv:YYYY.MM.N` to GitHub Packages,
-4. creates the GitHub Release with the AAR and the contract report.
+3. publishes `tv.own.owntv:libmpv:YYYY.MM.N` to OwnTV's Maven repository (the `gh-pages` branch of
+   OwnTV_Core, written with the `CORE_BUMP_TOKEN` secret; the newest 12 versions are kept),
+4. creates the GitHub Release with the AAR and the contract report,
+5. opens a **"Pin libmpv YYYY.MM.N" pull request on OwnTV_Core**. It never merges itself — a new
+   engine waits for the device test.
 
-A published version is immutable. Re-running on a tag that already published stops with `409 Conflict`;
-fix forward with the next `N`.
+A published version is immutable. Re-running on a tag that already published stops with "already
+published"; fix forward with the next `N`.
 
-Then OwnTV Core bumps `libmpv` in its `gradle/libs.versions.toml` — see [UPDATING.md](UPDATING.md).
+Then the pin PR on OwnTV Core is reviewed, device-tested and merged — see [UPDATING.md](UPDATING.md).
 
 ## Consuming it
 
 ```kotlin
-// settings.gradle.kts — GitHub's Maven registry needs a token with read:packages even for downloads.
+// settings.gradle.kts — public, no credentials
 maven {
-    url = uri("https://maven.pkg.github.com/ahXN00/OwnTV_libmpv")
-    credentials {
-        username = providers.gradleProperty("gpr.user").orNull
-        password = providers.gradleProperty("gpr.token").orNull
-    }
+    url = uri("https://ahxn00.github.io/OwnTV_Core/maven")
     content { includeGroup("tv.own.owntv") }
 }
 
@@ -127,7 +128,6 @@ maven {
 libmpv = { group = "tv.own.owntv", name = "libmpv", version.ref = "libmpv" }
 ```
 
-Credentials live in `~/.gradle/gradle.properties` or CI secrets, never in a repository.
 
 ## Licence
 

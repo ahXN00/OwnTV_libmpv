@@ -11,4 +11,5 @@ First OwnTV build, forked from jarnedemeulemeester/libmpv-android `8687e8c` (aft
 - FFmpeg filter allowlist: mpv's deinterlacer (`bwdif`) and `af=lavfi` (night mode, levelling) now work.
 - `mpegts` and `matroska` muxers; still no encoders.
 - ABIs armeabi-v7a, arm64-v8a, x86_64 (32-bit x86 dropped).
-- Published as `tv.own.owntv:libmpv` on GitHub Packages; Java package `dev.jdtech.mpv` unchanged.
+- Published as `tv.own.owntv:libmpv` to OwnTV's public Maven repository (https://ahxn00.github.io/OwnTV_Core/maven,
+  no login); Java package `dev.jdtech.mpv` unchanged.

@@ -77,9 +77,11 @@ whenever official mpv or the upstream library has released since.
 
 ## 5. Take it into OwnTV
 
-In `OwnTV_Core`:
+The publish opened a **"Pin libmpv YYYY.MM.N" pull request on OwnTV_Core** (it changes
+`libmpv = "YYYY.MM.N"` in `gradle/libs.versions.toml`, and core's CI builds it). It never merges itself.
+In `OwnTV_Core`, on that branch:
 
-1. `gradle/libs.versions.toml` → `libmpv = "YYYY.MM.N"`.
+1. Any new mpv option OwnTV needs (step 3) goes onto the same branch.
 2. Core builds: `./gradlew :core:assembleRelease :player-core:assembleRelease`, unit tests, and both
    apps' `assembleStandardRelease` against core's source.
 3. **Device test** on the TCL TV and the phone (release APKs, `adb install -r`, data kept) — the `mpv ready`

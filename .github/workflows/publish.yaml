@@ -1,7 +1,13 @@
 name: Publish
 
-# Push a tag vYYYY.MM.N → full build + contract check → GitHub Packages → GitHub Release with the AAR.
-# A published version is immutable: re-running on a tag that already published fails with 409, by design.
+# Push a tag vYYYY.MM.N and this runs, in order:
+#   1. the tag format check,
+#   2. the full build + contract check (build.yaml, the same as every push),
+#   3. the publish into OwnTV's public Maven repository (https://ahxn00.github.io/OwnTV_Core/maven),
+#   4. the GitHub Release with the AAR and the contract report,
+#   5. a "Pin libmpv" pull request on OwnTV_Core. It is NEVER merged automatically: a new engine
+#      changes playback and waits for the owner's device test (UPDATING.md step 5).
+# A published version is immutable: re-running on a tag that already published fails, by design.
 on:
   push:
     tags:
@@ -28,10 +34,10 @@ jobs:
     needs: version
     permissions:
       contents: read
-      packages: write
     uses: ./.github/workflows/build.yaml
     with:
       publish-version: ${{ needs.version.outputs.version }}
+    secrets: inherit
 
   release:
     name: GitHub Release
@@ -51,7 +57,7 @@ jobs:
         run: |
           mv libmpv/build/outputs/aar/libmpv-release.aar "libmpv-$VERSION.aar"
           {
-            echo "Maven: \`tv.own.owntv:libmpv:$VERSION\` (GitHub Packages)"
+            echo "Maven: \`tv.own.owntv:libmpv:$VERSION\` from https://ahxn00.github.io/OwnTV_Core/maven (no login)"
             echo
             echo "Pinned sources: see \`buildscripts/include/depinfo.sh\` at this tag."
             echo
@@ -60,3 +66,52 @@ jobs:
             echo '```'
           } > notes.md
           gh release create "$GITHUB_REF_NAME" "libmpv-$VERSION.aar" --title "libmpv $VERSION" --notes-file notes.md --verify-tag
+
+  pin-core:
+    name: Open the pin pull request on OwnTV_Core
+    needs: [version, release]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: libmpv-release
+      - env:
+          # A PAT: the built-in token cannot write to another repository, and a pull request it
+          # opened would not start OwnTV_Core's CI.
+          GH_TOKEN: ${{ secrets.CORE_BUMP_TOKEN }}
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          BRANCH="bump/libmpv-$VERSION"
+          if [ -n "$(gh pr list -R ahXN00/OwnTV_Core --head "$BRANCH" --state open --json number -q '.[].number')" ]; then
+            echo "A pull request for $BRANCH is already open."
+            exit 0
+          fi
+          git clone -q --depth 1 "https://x-access-token:${GH_TOKEN}@github.com/ahXN00/OwnTV_Core.git" core
+          cd core
+          # Only a catalog that already takes libmpv from this build can be bumped by editing the
+          # version; anything else needs a human.
+          if ! grep -q '^libmpv = { group = "tv.own.owntv", name = "libmpv"' gradle/libs.versions.toml; then
+            echo "::warning::OwnTV_Core does not consume tv.own.owntv:libmpv yet — no pin PR opened."
+            exit 0
+          fi
+          git switch -c "$BRANCH"
+          sed -i -E "s|^libmpv = \".*\"$|libmpv = \"${VERSION}\"|" gradle/libs.versions.toml
+          grep -qx "libmpv = \"${VERSION}\"" gradle/libs.versions.toml || { echo "::error::could not set libmpv"; exit 1; }
+          if git diff --quiet; then
+            echo "OwnTV_Core is already on libmpv $VERSION."
+            exit 0
+          fi
+          git -c user.name=OwnTV -c user.email=xiannero@gmail.com commit -qam "Pin libmpv $VERSION"
+          git push -q origin "$BRANCH"
+          {
+            echo "libmpv \`$VERSION\` is published: https://github.com/ahXN00/OwnTV_libmpv/releases/tag/v$VERSION"
+            echo
+            echo "**Do not merge before the device test** on the TV and the phone — OwnTV_libmpv's UPDATING.md, step 5."
+            echo "Review mpv's interface changes against OwnTVPlayer.kt first (step 3)."
+            echo
+            echo '```'
+            cat ../contract.txt
+            echo '```'
+          } > ../body.md
+          gh pr create -R ahXN00/OwnTV_Core --base main --head "$BRANCH" --title "Pin libmpv $VERSION" --body-file ../body.md
