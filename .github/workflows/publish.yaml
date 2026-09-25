@@ -1,67 +1,62 @@
 name: Publish
 
+# Push a tag vYYYY.MM.N → full build + contract check → GitHub Packages → GitHub Release with the AAR.
+# A published version is immutable: re-running on a tag that already published fails with 409, by design.
 on:
   push:
     tags:
       - v*
 
 jobs:
-  publish:
-    name: Publish
+  version:
+    name: Check the tag
     runs-on: ubuntu-latest
-    environment: release
-    if: ${{ contains(github.repository_owner, 'jarnedemeulemeester') || startsWith(github.ref, 'refs/tags/v') }}
+    outputs:
+      version: ${{ steps.v.outputs.version }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-
-      - name: Setup Java JDK
-        uses: actions/setup-java@v6
-        with:
-          distribution: temurin
-          java-version: 17
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6
-
-      - name: Symlink SDK
-        working-directory: ./buildscripts
+      - id: v
         run: |
-          mkdir sdk
-          ln -s ${ANDROID_HOME} ./sdk/android-sdk-linux
+          version="${GITHUB_REF_NAME#v}"
+          if ! [[ "$version" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]+$ ]]; then
+            echo "::error::tag must be vYYYY.MM.N, got $GITHUB_REF_NAME"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y autoconf pkgconf libtool ninja-build python3-pip python3-jinja2 gperf nasm
-          sudo pip3 install --break-system-packages meson
+  build:
+    name: Build and publish
+    needs: version
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/build.yaml
+    with:
+      publish-version: ${{ needs.version.outputs.version }}
 
-      - name: Download dependencies
-        working-directory: ./buildscripts
-        env:
-          IN_CI: 1
-        run: ./download.sh
-
-      - name: Apply patches
-        working-directory: ./buildscripts
-        run: ./patch.sh
-
-      - name: Build
-        working-directory: ./buildscripts
-        run: ./build.sh
-
-      - name: Publish
-        run: ./gradlew publishToMavenCentral --no-configuration-cache
-        env:
-          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.OSSRH_USERNAME }}
-          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.OSSRH_PASSWORD }}
-          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
-          ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_KEY_ID }}
-          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
-
-      - name: Create release
-        uses: softprops/action-gh-release@v3
+  release:
+    name: GitHub Release
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
-          draft: true
-          files: |
-            ./libmpv/build/outputs/aar/libmpv-release.aar
+          name: libmpv-release
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          mv libmpv/build/outputs/aar/libmpv-release.aar "libmpv-$VERSION.aar"
+          {
+            echo "Maven: \`tv.own.owntv:libmpv:$VERSION\` (GitHub Packages)"
+            echo
+            echo "Pinned sources: see \`buildscripts/include/depinfo.sh\` at this tag."
+            echo
+            echo '```'
+            cat contract.txt
+            echo '```'
+          } > notes.md
+          gh release create "$GITHUB_REF_NAME" "libmpv-$VERSION.aar" --title "libmpv $VERSION" --notes-file notes.md --verify-tag

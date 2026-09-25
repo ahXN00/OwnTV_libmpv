@@ -1,13 +1,13 @@
-import com.vanniktech.maven.publish.AndroidSingleVariantLibrary
-import com.vanniktech.maven.publish.JavadocJar
-import com.vanniktech.maven.publish.SourcesJar
-
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.maven.publish)
+    `maven-publish`
 }
 
+// Date-based: YYYY.MM.N (see UPDATING.md). The publish workflow passes it from the tag.
+version = providers.gradleProperty("libVersion").getOrElse("0.0.0-local")
+
 android {
+    // The Java package stays `dev.jdtech.mpv`, so OwnTV's player code is untouched by the swap.
     namespace = "dev.jdtech.mpv"
     compileSdk = 36
     buildToolsVersion = "37.0.0"
@@ -16,6 +16,8 @@ android {
     defaultConfig {
         minSdk = 26
         consumerProguardFiles("proguard-rules.pro")
+        // Must match buildscripts/build.sh `archs`: the JNI glue links against the prebuilt libmpv.
+        ndk { abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86_64") }
         externalNativeBuild {
             cmake {
                 arguments += listOf(
@@ -38,52 +40,42 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
+    publishing {
+        singleVariant("release")
+    }
 }
 
-mavenPublishing {
-    publishToMavenCentral(automaticRelease = true)
-    signAllPublications()
-
-    configure(
-        platform = AndroidSingleVariantLibrary(
-            javadocJar = JavadocJar.Empty(),
-            sourcesJar = SourcesJar.Empty(),
-            variant = "release",
-        )
-    )
-
-    coordinates(
-        groupId = "dev.jdtech.mpv",
-        artifactId = "libmpv",
-        version = "1.0.0"
-    )
-
-    pom {
-        name = "libmpv-android"
-        description = "libmpv for Android"
-        inceptionYear = "2023"
-        url = "https://github.com/jarnedemeulemeester/libmpv-android"
-        licenses {
-            license {
-                name = "MIT license"
-                url = "https://github.com/jarnedemeulemeester/libmpv-android/blob/main/LICENSE"
+publishing {
+    publications {
+        register<MavenPublication>("release") {
+            groupId = "tv.own.owntv"
+            artifactId = "libmpv"
+            version = project.version as String
+            afterEvaluate { from(components["release"]) }
+            pom {
+                name = "OwnTV libmpv"
+                description = "libmpv for Android as used by OwnTV: pinned mpv master, FFmpeg release, filter allowlist."
+                url = "https://github.com/ahXN00/OwnTV_libmpv"
+                licenses {
+                    // The Kotlin/JNI wrapper is MIT; the bundled FFmpeg (--enable-gpl --enable-version3)
+                    // and mpv make the binaries GPLv3 as a whole.
+                    license { name = "GPL-3.0-or-later (binaries); MIT (wrapper)" }
+                }
             }
         }
-        developers {
-            developer {
-                id = "jarnedemeulemeester"
-                name = "Jarne Demeulemeester"
-                email = "jarnedemeulemeester@gmail.com"
+    }
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/ahXN00/OwnTV_libmpv")
+            // Never in the repo — ~/.gradle/gradle.properties locally, the workflow token in CI.
+            credentials {
+                username = providers.gradleProperty("gpr.user")
+                    .orElse(providers.environmentVariable("GITHUB_ACTOR")).orNull
+                password = providers.gradleProperty("gpr.token")
+                    .orElse(providers.environmentVariable("GITHUB_TOKEN")).orNull
             }
-        }
-        scm {
-            url = "https://github.com/jarnedemeulemeester/libmpv-android.git"
-            connection = "scm:git@github.com:jarnedemeulemeester/libmpv-android.git"
-            developerConnection = "scm:git@github.com:jarnedemeulemeester/libmpv-android.git"
-        }
-        issueManagement {
-            system = "GitHub"
-            url = "https://github.com/jarnedemeulemeester/libmpv-android/issues"
         }
     }
 }

@@ -6,7 +6,7 @@ cd "$( dirname "${BASH_SOURCE[0]}" )"
 cleanbuild=0
 nodeps=0
 target=mpv-android
-archs=(armv7l arm64 x86 x86_64)
+archs=(armv7l arm64 x86_64) # no 32-bit x86: neither OwnTV app ships it
 
 getdeps () {
 	varname="dep_${1//-/_}[*]"

@@ -1,0 +1,89 @@
+name: Monthly mpv update
+
+# On the 1st of every month: if mpv master has moved past the pinned commit, bump the pin on a branch,
+# build it with the full contract check, and open a pull request that lists mpv's interface changes
+# since the old pin. A human (see UPDATING.md) reviews those against OwnTV's option list, merges, tags.
+# The build runs here rather than on the PR because a PR opened with GITHUB_TOKEN triggers no workflows.
+on:
+  schedule:
+    - cron: "0 6 1 * *"
+  workflow_dispatch:
+
+jobs:
+  bump:
+    name: Bump the mpv pin
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      branch: ${{ steps.bump.outputs.branch }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - id: bump
+        run: |
+          old=$(sed -n 's/^v_mpv=//p' buildscripts/include/depinfo.sh)
+          git clone -q --filter=blob:none https://github.com/mpv-player/mpv.git /tmp/mpv
+          new=$(git -C /tmp/mpv rev-parse HEAD)
+          if [ "$old" = "$new" ]; then
+            echo "mpv master is still $old — nothing to do."
+            exit 0
+          fi
+          branch="update/mpv-$(date -u +%Y-%m)-${new:0:9}"
+          {
+            echo "Bumps mpv \`${old:0:9}\` → \`${new:0:9}\` ($(git -C /tmp/mpv describe --tags $new))."
+            echo
+            echo "Commits: $(git -C /tmp/mpv rev-list --count $old..$new) — https://github.com/mpv-player/mpv/compare/$old...$new"
+            echo
+            echo "The build and contract check ran in the workflow that opened this PR (see its run)."
+            echo
+            echo "## New entries in mpv's DOCS/interface-changes"
+            echo "Check each against the options OwnTV sets (UPDATING.md, step 3)."
+            echo
+            added=$(git -C /tmp/mpv diff --name-only --diff-filter=A $old $new -- DOCS/interface-changes)
+            if [ -z "$added" ]; then echo "_none_"; fi
+            for f in $added; do
+              echo "- **$(basename $f)**: $(git -C /tmp/mpv show $new:$f | tr '\n' ' ')"
+            done
+          } > /tmp/pr-body.md
+          sed -i "s/^v_mpv=.*/v_mpv=$new/" buildscripts/include/depinfo.sh
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git commit -am "Bump mpv to ${new:0:9}"
+          git push origin "$branch"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v7
+        if: steps.bump.outputs.branch != ''
+        with:
+          name: pr-body
+          path: /tmp/pr-body.md
+
+  build:
+    name: Build the bump
+    needs: bump
+    if: needs.bump.outputs.branch != ''
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/build.yaml
+    with:
+      ref: ${{ needs.bump.outputs.branch }}
+
+  pull-request:
+    name: Open the pull request
+    needs: [bump, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: pr-body
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ needs.bump.outputs.branch }}
+        run: gh pr create --head "$BRANCH" --base main --title "Monthly mpv update ($BRANCH)" --body-file pr-body.md

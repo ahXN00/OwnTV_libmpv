@@ -1,18 +1,42 @@
-name: Build libmpv-android
+name: Build
 
-on: 
+# Every push and pull request builds the full native stack and checks the build contract
+# (tools/inspect_aar.py). publish.yaml and monthly-update.yaml call this same workflow, so a
+# published or proposed AAR is held to exactly the same checks.
+on:
   push:
     branches:
       - main
   pull_request:
+  workflow_call:
+    inputs:
+      ref:
+        description: Git ref to build (default: the triggering ref)
+        type: string
+        default: ""
+      publish-version:
+        description: When set (YYYY.MM.N), publish the AAR to GitHub Packages under this version
+        type: string
+        default: ""
+
+concurrency:
+  # Named after this file, not github.workflow: a called workflow reports the caller's name.
+  group: build-${{ inputs.ref || github.ref }}-${{ inputs.publish-version }}
+  cancel-in-progress: ${{ inputs.publish-version == '' }}
 
 jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    timeout-minutes: 180
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
 
       - name: Setup Java JDK
         uses: actions/setup-java@v6
@@ -33,7 +57,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y autoconf pkgconf libtool ninja-build python3-pip python3-jinja2 gperf nasm
-          sudo pip3 install --break-system-packages meson
+          sudo pip3 install --break-system-packages meson pyelftools
 
       - name: Download dependencies
         working-directory: ./buildscripts
@@ -49,7 +73,18 @@ jobs:
         working-directory: ./buildscripts
         run: ./build.sh
 
+      - name: Check the build contract
+        run: python3 tools/inspect_aar.py libmpv/build/outputs/aar/libmpv-release.aar | tee contract.txt
+
       - uses: actions/upload-artifact@v7
         with:
-          name: libmpv-release.aar
-          path: ./libmpv/build/outputs/aar/libmpv-release.aar
+          name: libmpv-release
+          path: |
+            libmpv/build/outputs/aar/libmpv-release.aar
+            contract.txt
+
+      - name: Publish to GitHub Packages
+        if: ${{ inputs.publish-version != '' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./gradlew :libmpv:publishReleasePublicationToGitHubPackagesRepository -PlibVersion=${{ inputs.publish-version }}

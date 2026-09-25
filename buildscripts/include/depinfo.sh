@@ -20,7 +20,9 @@ v_mbedtls=3.6.7
 v_libplacebo=7.360.1
 v_dav1d=1.5.4
 v_ffmpeg=9.0.2
-v_mpv=0.41.0
+# mpv is pinned to a commit on master, not a release tag: mpv makes no point releases, so every fix
+# after a release reaches users only through master. Bumped monthly — see UPDATING.md.
+v_mpv=2a4eb8067ca68ec19adf23daf8ccbb1a05afd6ed
 
 
 ## Dependency tree

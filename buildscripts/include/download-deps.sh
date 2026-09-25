@@ -49,7 +49,11 @@ fi
 
 [ ! -d libplacebo ] && git clone --depth 1 --branch v$v_libplacebo --recurse-submodules https://code.videolan.org/videolan/libplacebo.git libplacebo
 
-# mpv
-[ ! -d mpv ] && git clone --depth 1 --branch v$v_mpv https://github.com/mpv-player/mpv.git mpv
+# mpv — a pinned master commit. Blobless rather than shallow, so the tags come along and mpv's
+# version string reads "v0.41.0-1072-g2a4eb8067" instead of a bare hash.
+if [ ! -d mpv ]; then
+	git clone --filter=blob:none https://github.com/mpv-player/mpv.git mpv
+	git -C mpv checkout -q $v_mpv
+fi
 
 cd ..
