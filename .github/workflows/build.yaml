@@ -11,11 +11,11 @@ on:
   workflow_call:
     inputs:
       ref:
-        description: Git ref to build (default: the triggering ref)
+        description: "Git ref to build (default: the triggering ref)"
         type: string
         default: ""
       publish-version:
-        description: When set (YYYY.MM.N), publish the AAR to GitHub Packages under this version
+        description: "When set (YYYY.MM.N), publish the AAR to GitHub Packages under this version"
         type: string
         default: ""
 
