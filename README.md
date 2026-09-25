@@ -24,6 +24,23 @@ player code does not know the difference.
 - **Reproducible.** Every source is pinned to a tag or commit; nothing floats.
 - **Lean.** No encoders, no Vulkan, no libcurl, no 32-bit x86 — OwnTV uses none of them.
 
+## Versions compared
+
+What official mpv offers, what the upstream library we forked ships, and what this build ships.
+The "ours" column changes with every release — update it in the same commit as `depinfo.sh`.
+
+| | Official mpv | Upstream — jarnedemeulemeester/libmpv-android 1.0.0 | **Ours — OwnTV libmpv** |
+|---|---|---|---|
+| mpv | newest release **0.41.0** (2025-12-21); no point releases, fixes land on master only | 0.41.0 | **master `2a4eb8067`** (0.41.0 + 1,072 commits, 2026-09-23) |
+| FFmpeg | — (newest FFmpeg release: 9.0.2) | 8.1 | **9.0.2** |
+| FFmpeg filters | — | none | **29, allowlisted** (deinterlace, rotation, audio dynamics, EQ + plumbing) |
+| FFmpeg muxers / encoders | — | none / none | mpegts, matroska / none |
+| libplacebo · libass · dav1d | — | 7.360.1 · 0.17.4 · 1.5.3 | 7.360.1 · 0.17.5 · 1.5.4 |
+| Several instances at once | — | yes | yes (same JNI) |
+| ABIs | — | armeabi-v7a, arm64-v8a, x86, x86_64 | armeabi-v7a, arm64-v8a, x86_64 |
+| Published as | — | `dev.jdtech.mpv:libmpv` (Maven Central) | `tv.own.owntv:libmpv` (GitHub Packages) |
+| How often it moves | a release every 6–9 months | when its maintainer tags (5 releases in 27 months) | **monthly** ([UPDATING.md](UPDATING.md)) |
+
 ## What is inside
 
 Every version is pinned in [`buildscripts/include/depinfo.sh`](buildscripts/include/depinfo.sh).

@@ -72,6 +72,8 @@ Anything that needs a new setting in OwnTV goes into core in the same update, ne
 Merge the PR(s) into `main`, then tag: `git tag vYYYY.MM.0 && git push origin vYYYY.MM.0`.
 `publish.yaml` builds, checks, publishes `tv.own.owntv:libmpv:YYYY.MM.0` and creates the release.
 Add a section to [CHANGELOG.md](CHANGELOG.md) first: mpv commit + describe, FFmpeg version, what changed.
+Update the README's "Versions compared" table too: the "ours" column always, the other two columns
+whenever official mpv or the upstream library has released since.
 
 ## 5. Take it into OwnTV
 
