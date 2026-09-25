@@ -67,6 +67,17 @@ git -C <mpv clone> log --oneline <old>..<new> -- video/out/vo_mediacodec_embed.c
 
 Anything that needs a new setting in OwnTV goes into core in the same update, never into an app.
 
+### Carried patches
+
+`buildscripts/patches/mpv/` holds changes OwnTV keeps on top of mpv. A bump PR whose build fails in
+*Apply patches* means mpv changed those lines: read the new upstream code — if mpv fixed the problem
+itself, delete the patch; otherwise refresh it (`git revert --no-commit <commit>` in a clone, then
+`git diff`). Each patch file starts with why it exists and how it was found.
+
+- `0001-revert-hls-manifest-through-stream.patch` — mpv `13a4bfbc1` lets mpv fetch the HLS/DASH
+  playlist itself; panels that bind segment access to that response then answer **403** on every
+  segment. Test for it before dropping the patch: an Xtream HLS channel on mpv must play.
+
 ## 4. Release this library
 
 Merge the PR(s) into `main`, then tag: `git tag vYYYY.MM.0 && git push origin vYYYY.MM.0`.

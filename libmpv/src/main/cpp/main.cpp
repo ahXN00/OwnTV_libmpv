@@ -55,7 +55,7 @@ jni_func(jlong, nativeCreate, jobject thiz, jobject appctx) {
         return 0;
     }
 
-    mpv_request_log_messages(instance->mpv, "v");
+    mpv_request_log_messages(instance->mpv, "terminal-default"); // OwnTV: follow the app's msg-level, not always verbose
     return reinterpret_cast<jlong>(instance);
 }
 
