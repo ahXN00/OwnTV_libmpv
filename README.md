@@ -11,18 +11,18 @@ player code does not know the difference.
 
 > **Monthly maintenance lives in [UPDATING.md](UPDATING.md).** Read it before touching a version.
 
-## Why OwnTV builds its own
+## Design rules
 
-The P15b audit (`OwnTV_Core/future_work/ENGINE_SWAP_AUDIT_2026-09-25.md`, local only) compared the
-upstream library, the mpvEx library and official mpv-android. In short:
-
-| Need | Upstream jdtech 1.0.0 | mpvEx library | **This build** |
-|---|---|---|---|
-| Newest mpv (mpv makes no point releases; fixes live on master) | 0.41.0 (Dec 2025) | master, unpinned | **master, pinned commit, bumped monthly** |
-| FFmpeg filters (deinterlace, night mode, levelling) | none — mpv's `bwdif` deinterlacer and every `af=lavfi` fail silently | all | **allowlist** (the ones mpv and OwnTV use) |
-| Several mpv instances at once — OwnTV's `hardReset()` starts a fresh core while a stuck one is still being destroyed | yes | **no** (one global instance; a second `create()` aborts the app) | **yes** (upstream's JNI) |
-| Reproducible from pinned sources | yes | no | **yes** |
-| Size (arm64 + armv7 native, deflated) | 21.6 MiB | 30.7 MiB (Vulkan) | ≈ upstream + filters (no Vulkan) |
+- **Newest mpv, always.** mpv makes no point releases — every fix after a release lives only on
+  master. This build pins a master commit and bumps it every month ([UPDATING.md](UPDATING.md)).
+- **FFmpeg on its newest release**, with the filters mpv and OwnTV actually use. Without filters, mpv's
+  deinterlacer (`bwdif`) and every audio filter (`af=lavfi`: night mode, volume levelling) fail
+  silently — the option is accepted, nothing runs.
+- **Several mpv instances at once.** OwnTV's `hardReset()` starts a fresh core while a stuck one is
+  still being destroyed on another thread. The per-instance JNI from upstream allows that; it must
+  never be replaced by a single global instance.
+- **Reproducible.** Every source is pinned to a tag or commit; nothing floats.
+- **Lean.** No encoders, no Vulkan, no libcurl, no 32-bit x86 — OwnTV uses none of them.
 
 ## What is inside
 
