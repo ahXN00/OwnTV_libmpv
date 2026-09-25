@@ -9,9 +9,9 @@ Nothing here is released without a device test on the TV and the phone.
 | Source | Pinned in `depinfo.sh` as | Noticed by |
 |---|---|---|
 | mpv master | `v_mpv` (commit) | **`monthly-update.yaml`**, 1st of the month, 06:00 UTC — opens a PR |
-| FFmpeg releases (`n9.0.x`, later `n9.1`, `n10`) | `v_ffmpeg` | Renovate PR, if the Renovate app is installed on this repo; else step 2 below |
-| libplacebo, libass, dav1d, mbedTLS, freetype, fribidi, harfbuzz, libunibreak, libxml2, fontconfig, Lua | `v_*` | Renovate PR, else step 2 |
-| NDK / SDK / Gradle / AGP | `depinfo.sh`, `libmpv/build.gradle.kts`, `gradle/` | Renovate PR, else step 2 |
+| FFmpeg releases (`n9.0.x`, later `n9.1`, `n10`) | `v_ffmpeg` | Renovate PR (the Renovate app is installed on this repo only, in Interactive mode) |
+| libplacebo, libass, dav1d, mbedTLS, freetype, fribidi, harfbuzz, libunibreak, libxml2, fontconfig, Lua | `v_*` | Renovate PR |
+| NDK / SDK / Gradle / AGP | `depinfo.sh`, `libmpv/build.gradle.kts`, `gradle/` | Renovate PR |
 | the upstream wrapper (jdtech) | the `upstream` remote | step 6 |
 
 ## 1. The mpv pull request
@@ -28,7 +28,7 @@ On the 1st, **Actions → Monthly mpv update** runs by itself (or run it by hand
 
 ## 2. The other dependencies
 
-Merge Renovate's PRs if they are green. Without Renovate, check by hand and bump in `depinfo.sh`:
+Merge Renovate's PRs if they are green. If Renovate is ever removed, check by hand and bump in `depinfo.sh`:
 
 - FFmpeg: newest `n9.0.x` tag at https://github.com/FFmpeg/FFmpeg/tags. A point release is always taken
   (security fixes). A new major (`n9.1`, `n10.0`) is taken only once mpv master builds against it —
@@ -96,9 +96,11 @@ In `OwnTV_Core`, on that branch:
 2. Core builds: `./gradlew :core:assembleRelease :player-core:assembleRelease`, unit tests, and both
    apps' `assembleStandardRelease` against core's source.
 3. **Device test** on the TCL TV and the phone (release APKs, `adb install -r`, data kept) — the `mpv ready`
-   log line shows the mpv and FFmpeg versions:
+   log line shows the mpv and FFmpeg versions and the active audio filters (`af=`):
    - VOD 4K HDR (direct path) and an old Xvid / MPEG-2 file (copy rung)
-   - live on mpv: an HLS and a raw TS channel, one that drops (reconnect), an HTTPS panel
+   - live on mpv: an **Xtream HLS channel** (the 403 check — see Carried patches), a raw TS channel, one that
+     drops (reconnect), an HTTPS panel
+   - Stream info's **Interlacing** row on mpv with hardware decoding off (progressive / deinterlaced by the player)
    - catch-up, ExoPlayer ⇄ mpv handover both ways, Multiview
    - image and text subtitles, surround and stereo, Night mode on mpv (by ear)
    - Quality menu on a multi-variant HLS channel
