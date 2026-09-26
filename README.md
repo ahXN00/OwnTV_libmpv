@@ -113,6 +113,7 @@ Every version is pinned in [`buildscripts/include/depinfo.sh`](buildscripts/incl
 | `buildscripts/build.sh` | no 32-bit x86 |
 | `buildscripts/patches/mpv/0001-revert-hls-manifest-through-stream.patch` | undoes mpv `13a4bfbc1`: with it, IPTV panels answer 403 on every HLS segment |
 | `libmpv/src/main/cpp/main.cpp` | mpv's log follows the app's `msg-level` (upstream always asked for verbose) |
+| `libmpv/src/main/cpp/event.cpp`, `jni_utils.*`, `MPVLib.kt` | end of file reaches the app with its reason and error code (`EventObserver.endFile`, no-op by default) |
 | `libmpv/build.gradle.kts`, `build.gradle.kts`, `gradle/libs.versions.toml` | publishes `tv.own.owntv:libmpv` to OwnTV's Maven repository instead of Maven Central; `abiFilters` |
 | `renovate.json` | the mpv rule removed (mpv is bumped by the monthly workflow) |
 | `tools/inspect_aar.py` | new — the build contract |

@@ -2,6 +2,13 @@
 
 One section per release, plus a line for every monthly check (UPDATING.md, step 7).
 
+## 2026.09.2 — 2026-09-26
+
+- JNI: `MPV_EVENT_END_FILE` now also reaches Java with its reason and error code —
+  `EventObserver.endFile(reason, error)` (default no-op, so existing observers compile unchanged) and
+  `MPVLib.MpvEndFileReason`. It is delivered just before the plain `event(MPV_EVENT_END_FILE)`, which is
+  unchanged. Same mpv and FFmpeg as 2026.09.1.
+
 ## 2026.09.1 — 2026-09-25
 
 - Revert mpv `13a4bfbc1` (patch): since it, mpv fetched HLS playlists itself and IPTV panels answered

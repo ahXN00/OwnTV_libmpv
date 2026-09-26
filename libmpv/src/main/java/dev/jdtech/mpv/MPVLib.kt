@@ -187,6 +187,14 @@ class MPVLib private constructor(nativePtr: Long) {
         }
     }
 
+    /** Called from native code just before [event] for `MPV_EVENT_END_FILE`; see [MpvEndFileReason]. */
+    fun endFile(reason: Int, error: Int) {
+        synchronized(observers) {
+            for (o in observers)
+                o.endFile(reason, error)
+        }
+    }
+
     fun addLogObserver(o: LogObserver) {
         synchronized(logObservers) {
             logObservers.add(o)
@@ -213,6 +221,18 @@ class MPVLib private constructor(nativePtr: Long) {
         fun eventProperty(property: String, value: Boolean)
         fun eventProperty(property: String, value: String)
         fun event(eventId: Int)
+
+        /** [reason] is one of [MpvEndFileReason]; [error] is mpv's error code (negative) for ERROR, else 0. */
+        fun endFile(reason: Int, error: Int) {}
+    }
+
+    /** `mpv_end_file_reason` from mpv's client.h. */
+    object MpvEndFileReason {
+        const val EOF: Int = 0
+        const val STOP: Int = 2
+        const val QUIT: Int = 3
+        const val ERROR: Int = 4
+        const val REDIRECT: Int = 5
     }
 
     interface LogObserver {

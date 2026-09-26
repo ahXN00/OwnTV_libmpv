@@ -95,6 +95,14 @@ void *event_thread(void *arg) {
             mp_property = (mpv_event_property*)mp_event->data;
             sendPropertyUpdateToJava(env, instance, mp_property);
             break;
+        case MPV_EVENT_END_FILE: {
+            // OwnTV: why the file ended (EOF / STOP / QUIT / ERROR / REDIRECT) and mpv's error code,
+            // delivered just before the plain event so an observer can classify it.
+            auto end = (mpv_event_end_file*)mp_event->data;
+            env->CallVoidMethod(instance->javaObject, mpv_MPVLib_endFile_II, (jint) end->reason, (jint) end->error);
+            sendEventToJava(env, instance, mp_event->event_id);
+            break;
+        }
         default:
             ALOGV("event: %s\n", mpv_event_name(mp_event->event_id));
             sendEventToJava(env, instance, mp_event->event_id);
