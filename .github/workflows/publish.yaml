@@ -102,7 +102,7 @@ jobs:
             echo "OwnTV_Core is already on libmpv $VERSION."
             exit 0
           fi
-          git -c user.name=OwnTV -c user.email=xiannero@gmail.com commit -qam "Pin libmpv $VERSION"
+          git -c "user.name=Ashiq Hasan" -c user.email=ashiq.hasan@hotmail.com commit -qam "Pin libmpv $VERSION"
           git push -q origin "$BRANCH"
           {
             echo "libmpv \`$VERSION\` is published: https://github.com/ahXN00/OwnTV_libmpv/releases/tag/v$VERSION"
