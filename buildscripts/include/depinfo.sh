@@ -22,7 +22,7 @@ v_dav1d=1.5.4
 v_ffmpeg=9.0.2
 # mpv is pinned to a commit on master, not a release tag: mpv makes no point releases, so every fix
 # after a release reaches users only through master. Bumped monthly — see UPDATING.md.
-v_mpv=2a4eb8067ca68ec19adf23daf8ccbb1a05afd6ed
+v_mpv=3186d369f9f090cd1363be0ac46a037824b702c6
 
 
 ## Dependency tree
