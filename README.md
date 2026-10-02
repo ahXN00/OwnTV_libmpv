@@ -216,6 +216,11 @@ This library is a thin layer over other people's excellent work. Thank you to al
 The logo's mpv-style mark is OwnTV's own flat drawing in mpv's colours; mpv's own logo belongs to the
 mpv project.
 
+### 🎨 Brand
+
+The lowercase **owntv** wordmark was designed for OwnTV by [@m3th0d93](https://github.com/m3th0d93)
+in [issue #227](https://github.com/ahXN00/OwnTV/issues/227).
+
 ## ⚖️ Legal
 
 OwnTV libmpv is media **player** infrastructure only. It ships with no channels, playlists,
