@@ -2,6 +2,12 @@
 
 One section per release, plus a line for every monthly check (UPDATING.md, step 7).
 
+## 2026.10.0 — 2026-10-03
+
+- mpv `3186d369f` (git-release-373, master of 2026-10-01), was `2a4eb8067`; no interface changes.
+- HarfBuzz 14.5.0, libunibreak 8.0 (Unicode 17 line breaking), Gradle 9.8.0.
+- mbedTLS stays on 3.6.x: FFmpeg n9.0.2 does not build against mbedTLS 4 yet.
+
 ## 2026.09.2 — 2026-09-26
 
 - JNI: `MPV_EVENT_END_FILE` now also reaches Java with its reason and error code —

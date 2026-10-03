@@ -152,5 +152,14 @@
       "extractVersionTemplate": "^n?(?<version>.*)$",
       "versioningTemplate": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)(?:\\.(?<patch>\\d+))?(?<prerelease>[^.-]+)?$"
     }
+  ],
+  "packageRules": [
+    {
+      "matchPackageNames": [
+        "Mbed-TLS/mbedtls"
+      ],
+      "allowedVersions": "<4.0.0",
+      "description": "FFmpeg's tls_mbedtls.c still uses the ctr_drbg/entropy API mbedTLS 4 removed; stay on the 3.6 LTS line."
+    }
   ]
 }
