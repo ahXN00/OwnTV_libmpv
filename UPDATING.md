@@ -77,6 +77,10 @@ itself, delete the patch; otherwise refresh it (`git revert --no-commit <commit>
 - `0001-revert-hls-manifest-through-stream.patch` — mpv `13a4bfbc1` lets mpv fetch the HLS/DASH
   playlist itself; panels that bind segment access to that response then answer **403** on every
   segment. Test for it before dropping the patch: an Xtream HLS channel on mpv must play.
+- `0002-audiotrack-no-spin-on-underrun.patch` — on an audio underrun `ao_audiotrack` wrote zero bytes
+  in a loop with its lock held, and mpv froze on the first frame with no sound. Drop it only once
+  upstream `ao_thread` waits on a zero-sample read itself; test: ten catch-up opens on the TCL, none
+  stuck at 0:01.
 
 ## 4. Release this library
 

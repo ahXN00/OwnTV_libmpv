@@ -79,7 +79,7 @@ The "ours" column changes with every release — update it in the same commit as
 
 | | Official mpv | Upstream — jarnedemeulemeester/libmpv-android 1.0.0 | **Ours — OwnTV libmpv** |
 |---|---|---|---|
-| mpv | newest release **0.41.0** (2025-12-21); no point releases, fixes land on master only | 0.41.0 | **master `2a4eb8067`** (0.41.0 + 1,072 commits, 2026-09-23), one carried patch |
+| mpv | newest release **0.41.0** (2025-12-21); no point releases, fixes land on master only | 0.41.0 | **master `2a4eb8067`** (0.41.0 + 1,072 commits, 2026-09-23), two carried patches |
 | FFmpeg | — (newest FFmpeg release: 9.0.2) | 8.1 | **9.0.2** |
 | FFmpeg filters | — | none | **29, allowlisted** (deinterlace, rotation, audio dynamics, EQ + plumbing) |
 | FFmpeg muxers / encoders | — | none / none | mpegts, matroska / none |
@@ -94,7 +94,7 @@ The "ours" column changes with every release — update it in the same commit as
 Every version is pinned in [`buildscripts/include/depinfo.sh`](buildscripts/include/depinfo.sh).
 
 - **mpv** — a pinned commit on `master` (`v_mpv`), built with Lua, libass and libplacebo; no libcurl,
-  no Vulkan. OwnTV carries one patch on top ([`buildscripts/patches/mpv/`](buildscripts/patches/mpv)).
+  no Vulkan. OwnTV carries two patches on top ([`buildscripts/patches/mpv/`](buildscripts/patches/mpv)).
 - **FFmpeg** — a release tag (`v_ffmpeg`), `--enable-gpl --enable-version3`, MediaCodec + JNI,
   mbedTLS, dav1d, libxml2 (DASH). **No encoders.** Muxers: `mpegts` and `matroska` only, so mpv's
   `stream-record` can write what it is already playing. Filters: the allowlist in

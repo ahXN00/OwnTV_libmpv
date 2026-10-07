@@ -2,6 +2,12 @@
 
 One section per release, plus a line for every monthly check (UPDATING.md, step 7).
 
+## 2026.10.1 — 2026-10-07
+
+- Fix (patch): mpv no longer freezes on the first frame with no sound after an audio underrun —
+  `ao_audiotrack` spun with its lock held (found with catch-up on the TCL). Same mpv and FFmpeg as
+  2026.10.0.
+
 ## 2026.10.0 — 2026-10-03
 
 - mpv `3186d369f` (git-release-373, master of 2026-10-01), was `2a4eb8067`; no interface changes.
