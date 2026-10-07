@@ -4,9 +4,9 @@ One section per release, plus a line for every monthly check (UPDATING.md, step 
 
 ## 2026.10.1 — 2026-10-07
 
-- Fix (patch): mpv no longer freezes on the first frame with no sound after an audio underrun —
-  `ao_audiotrack` spun with its lock held (found with catch-up on the TCL). Same mpv and FFmpeg as
-  2026.10.0.
+- Fix (patch): `ao_audiotrack` no longer burns a whole CPU core during an audio underrun (found on
+  the TCL). An earlier wording of this entry said it fixed a first-frame freeze; it does not — that
+  freeze is handled in OwnTV_Core. Same mpv and FFmpeg as 2026.10.0.
 
 ## 2026.10.0 — 2026-10-03
 

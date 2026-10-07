@@ -2,14 +2,14 @@ OwnTV: stop ao_audiotrack spinning on an audio underrun.
 
 While the AudioTrack is playing, ao_thread reads audio and writes it with a blocking write, which is
 what paces the loop. When ao_read_data has nothing yet (an underrun: "Audio device underrun
-detected"), it writes zero bytes, which returns at once, and the loop re-runs immediately with
-p->lock held. The thread burns a whole core and the playloop, which needs p->lock to query the AO,
-never gets it: mpv freezes on the first frame with no sound, for good.
+detected"), it writes zero bytes, which returns at once, and the loop re-runs immediately: the
+thread burns a whole CPU core until audio arrives. Now a zero-sample read waits 10 ms on p->wakeup.
 
-Found on the TCL, 2026-10-07: catch-up (Stalker timeshift.php) froze at 0:01 in 5 of 8 opens,
-both on core main and with the Phase A fixes. /proc showed `ao/audiotrack` in state R gaining
-~140 ticks/s while mpv-cmd, demux and the decoder slept. Upstream master still has the loop
-unchanged, so drop this patch only once ao_thread waits on a zero-sample read itself.
+Found on the TCL, 2026-10-07, while chasing a catch-up that froze on its first frame: /proc showed
+`ao/audiotrack` in state R gaining ~140 ticks/s. The spin is real but was NOT that freeze's cause
+(p->lock is shared only with uninit, so it starved nothing; the freeze is in the direct MediaCodec
+path, handled in OwnTV_Core). Upstream master still has the loop unchanged, so drop this patch only
+once ao_thread waits on a zero-sample read itself.
 
 diff --git a/audio/out/ao_audiotrack.c b/audio/out/ao_audiotrack.c
 index f483ccc..c287337 100644
