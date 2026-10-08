@@ -7,8 +7,8 @@ thread burns a whole CPU core until audio arrives. Now a zero-sample read waits 
 
 Found on the TCL, 2026-10-07, while chasing a catch-up that froze on its first frame: /proc showed
 `ao/audiotrack` in state R gaining ~140 ticks/s. The spin is real but was NOT that freeze's cause
-(p->lock is shared only with uninit, so it starved nothing; the freeze is in the direct MediaCodec
-path, handled in OwnTV_Core). Upstream master still has the loop unchanged, so drop this patch only
+(p->lock is shared only with uninit, so it starved nothing; the freeze was a stalled Realtek
+MediaCodec decoder, fixed by patches/ffmpeg/0001 and 0002). Upstream master still has the loop unchanged, so drop this patch only
 once ao_thread waits on a zero-sample read itself.
 
 diff --git a/audio/out/ao_audiotrack.c b/audio/out/ao_audiotrack.c

@@ -69,8 +69,8 @@ Anything that needs a new setting in OwnTV goes into core in the same update, ne
 
 ### Carried patches
 
-`buildscripts/patches/mpv/` holds changes OwnTV keeps on top of mpv. A bump PR whose build fails in
-*Apply patches* means mpv changed those lines: read the new upstream code — if mpv fixed the problem
+`buildscripts/patches/mpv/` and `buildscripts/patches/ffmpeg/` hold changes OwnTV keeps on top of mpv
+and FFmpeg. A bump whose build fails in *Apply patches* means upstream changed those lines: read the new upstream code — if mpv fixed the problem
 itself, delete the patch; otherwise refresh it (`git revert --no-commit <commit>` in a clone, then
 `git diff`). Each patch file starts with why it exists and how it was found.
 
@@ -81,6 +81,12 @@ itself, delete the patch; otherwise refresh it (`git revert --no-commit <commit>
   in a loop, burning a whole CPU core until audio arrived. Drop it only once upstream `ao_thread`
   waits on a zero-sample read itself; test: during a catch-up open on the TCL, `ao/audiotrack` in
   `/proc/<pid>/task` stays in state S.
+- `ffmpeg/0001-mediacodec-never-pass-a-dequeue-timeout.patch` + `ffmpeg/0002-mediacodec-fail-a-stalled-decoder.patch`
+  — a Realtek MediaCodec decoder that stalls after the first frames used to lock mpv's core thread in
+  FFmpeg's receive loop forever (the TCL's catch-up first-frame freeze). 0001 makes every dequeue
+  return, 0002 fails the decode after 3 s without progress so mpv falls back to software. Drop them
+  only together, and only once FFmpeg bounds that loop itself; test: 10+ catch-up opens of an NPO 1
+  programme (Stalker, Junior) on the TCL — none may freeze, and `MediaCodec stalled` may appear.
 
 ## 4. Release this library
 

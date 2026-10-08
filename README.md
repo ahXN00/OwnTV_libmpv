@@ -80,7 +80,7 @@ The "ours" column changes with every release — update it in the same commit as
 | | Official mpv | Upstream — jarnedemeulemeester/libmpv-android 1.0.0 | **Ours — OwnTV libmpv** |
 |---|---|---|---|
 | mpv | newest release **0.41.0** (2025-12-21); no point releases, fixes land on master only | 0.41.0 | **master `2a4eb8067`** (0.41.0 + 1,072 commits, 2026-09-23), two carried patches |
-| FFmpeg | — (newest FFmpeg release: 9.0.2) | 8.1 | **9.0.2** |
+| FFmpeg | — (newest FFmpeg release: 9.0.2) | 8.1 | **9.0.2**, two carried patches |
 | FFmpeg filters | — | none | **29, allowlisted** (deinterlace, rotation, audio dynamics, EQ + plumbing) |
 | FFmpeg muxers / encoders | — | none / none | mpegts, matroska / none |
 | libplacebo · libass · dav1d | — | 7.360.1 · 0.17.4 · 1.5.3 | 7.360.1 · 0.17.5 · 1.5.4 |
@@ -96,7 +96,8 @@ Every version is pinned in [`buildscripts/include/depinfo.sh`](buildscripts/incl
 - **mpv** — a pinned commit on `master` (`v_mpv`), built with Lua, libass and libplacebo; no libcurl,
   no Vulkan. OwnTV carries two patches on top ([`buildscripts/patches/mpv/`](buildscripts/patches/mpv)).
 - **FFmpeg** — a release tag (`v_ffmpeg`), `--enable-gpl --enable-version3`, MediaCodec + JNI,
-  mbedTLS, dav1d, libxml2 (DASH). **No encoders.** Muxers: `mpegts` and `matroska` only, so mpv's
+  mbedTLS, dav1d, libxml2 (DASH), two carried MediaCodec patches
+  ([`buildscripts/patches/ffmpeg/`](buildscripts/patches/ffmpeg)). **No encoders.** Muxers: `mpegts` and `matroska` only, so mpv's
   `stream-record` can write what it is already playing. Filters: the allowlist in
   [`buildscripts/scripts/ffmpeg.sh`](buildscripts/scripts/ffmpeg.sh), each commented with who needs it.
 - **ABIs** — `armeabi-v7a`, `arm64-v8a`, `x86_64` (no 32-bit x86, which neither app ships). 64-bit
@@ -112,6 +113,7 @@ Every version is pinned in [`buildscripts/include/depinfo.sh`](buildscripts/incl
 | `buildscripts/scripts/ffmpeg.sh` | filter allowlist, `mpegts`/`matroska` muxers |
 | `buildscripts/build.sh` | no 32-bit x86 |
 | `buildscripts/patches/mpv/0001-revert-hls-manifest-through-stream.patch` | undoes mpv `13a4bfbc1`: with it, IPTV panels answer 403 on every HLS segment |
+| `buildscripts/patches/ffmpeg/0001-…`, `0002-…` | a MediaCodec decoder that stalls (Realtek, TCL) fails after 3 s instead of locking the player; mpv then decodes in software |
 | `libmpv/src/main/cpp/main.cpp` | mpv's log follows the app's `msg-level` (upstream always asked for verbose) |
 | `libmpv/src/main/cpp/event.cpp`, `jni_utils.*`, `MPVLib.kt` | end of file reaches the app with its reason and error code (`EventObserver.endFile`, no-op by default) |
 | `libmpv/build.gradle.kts`, `build.gradle.kts`, `gradle/libs.versions.toml` | publishes `tv.own.owntv:libmpv` to OwnTV's Maven repository instead of Maven Central; `abiFilters` |

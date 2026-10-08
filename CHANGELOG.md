@@ -2,6 +2,12 @@
 
 One section per release, plus a line for every monthly check (UPDATING.md, step 7).
 
+## 2026.10.2 — 2026-10-08
+
+- Fix (FFmpeg patches): a hardware decoder that stalls after the first frames (Realtek, found on the
+  TCL during catch-up) no longer locks the whole player; after 3 s mpv switches to software decoding
+  and playback continues. Same mpv and FFmpeg as 2026.10.1.
+
 ## 2026.10.1 — 2026-10-07
 
 - Fix (patch): `ao_audiotrack` no longer burns a whole CPU core during an audio underrun (found on
