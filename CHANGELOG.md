@@ -2,6 +2,17 @@
 
 One section per release, plus a line for every monthly check (UPDATING.md, step 7).
 
+## Unreleased
+
+- New `libowntvffmpeg.so`: ExoPlayer's FFmpeg audio decoder (Media3 1.11.1) on this library's own
+  FFmpeg, for OwnTV_Core. Checked by the build contract.
+- Fix: mbedTLS seeds from `/dev/urandom`; its default `/dev/random` can hold up HTTPS streams for
+  minutes on older boxes (as mpv-android `db7df51`).
+- Fix (FFmpeg patch 0002): the 3 s decoder-stall timer restarts on every frame and every flush, so
+  short normal pauses can no longer add up to a false switch to software decoding.
+- Hardening: every native library built with stack protector + `_FORTIFY_SOURCE=2`.
+- Every `.so` has a build-id; each GitHub Release carries the unstripped libraries per ABI.
+
 ## 2026.10.2 — 2026-10-08
 
 - Fix (FFmpeg patches): a hardware decoder that stalls after the first frames (Realtek, found on the

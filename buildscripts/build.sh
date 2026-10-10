@@ -48,7 +48,14 @@ loadarch () {
 	export native_dir="$PWD/../libmpv/src/main/jniLibs/$prefix_name"
 	export CC=$cc_triple-clang
 	export CXX=$cc_triple-clang++
-	export LDFLAGS="-Wl,-O1,--icf=safe -Wl,-z,max-page-size=16384"
+	# Provider streams are untrusted input to every decoder and demuxer: build with stack canaries
+	# and fortified libc calls. CPPFLAGS, not CFLAGS: a set CFLAGS replaces autotools' default
+	# "-g -O2" and mbedTLS's "-O2", and meson would put it after its own -O3. CPPFLAGS only adds.
+	# Meson, FFmpeg and autotools read it from here; mbedTLS takes it in mbedtls.sh.
+	export CPPFLAGS="-fstack-protector-strong -D_FORTIFY_SOURCE=2"
+	# build-id: a crash's stack from a user's device can be matched to the unstripped .so files
+	# attached to that release (publish.yaml).
+	export LDFLAGS="-Wl,-O1,--icf=safe -Wl,-z,max-page-size=16384 -Wl,--build-id=sha1"
 	export AR=llvm-ar
 	export RANLIB=llvm-ranlib
 }

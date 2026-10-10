@@ -82,6 +82,22 @@ jobs:
             libmpv/build/outputs/aar/libmpv-release.aar
             contract.txt
 
+      # The same .so files before stripping, one zip per ABI, attached to the GitHub Release
+      # (publish.yaml). Matched by build-id, they turn a native crash stack into function names.
+      - name: Collect unstripped native libraries
+        if: ${{ inputs.publish-version != '' }}
+        run: |
+          libs=libmpv/build/intermediates/merged_native_libs/release/mergeReleaseNativeLibs/out/lib
+          for abi in armeabi-v7a arm64-v8a x86_64; do
+            (cd "$libs/$abi" && zip -q -9 "$GITHUB_WORKSPACE/symbols-$abi.zip" *.so)
+          done
+
+      - uses: actions/upload-artifact@v7
+        if: ${{ inputs.publish-version != '' }}
+        with:
+          name: libmpv-symbols
+          path: symbols-*.zip
+
       # Into OwnTV's public Maven repository (the gh-pages branch of OwnTV_Core, served at
       # https://ahxn00.github.io/OwnTV_Core/maven). CORE_BUMP_TOKEN can write to OwnTV_Core; the
       # built-in token cannot. Keeps the newest 12 versions (~35 MB each; Pages sites cap at 1 GB).

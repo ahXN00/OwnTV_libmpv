@@ -10,6 +10,9 @@ Checks:
   * the mpv inside is the commit pinned in depinfo.sh
   * every filter in ffmpeg.sh's allowlist really compiled in — read from FFmpeg's generated
     libavfilter/filter_list.c, which is exactly the list the library registers
+  * libowntvffmpeg.so (ExoPlayer's FFmpeg audio decoder, used by OwnTV_Core) is in every ABI, links
+    this AAR's own avcodec / swresample / avutil and exports JNI_OnLoad
+  * every .so has a GNU build-id, so a crash stack can be matched to the release's unstripped files
 It also prints the mpv / FFmpeg versions and the per-ABI size, for the release notes.
 """
 import os
@@ -26,6 +29,8 @@ BUILDSCRIPTS = os.path.join(ROOT, "buildscripts")
 ABIS = {"armeabi-v7a": "", "arm64-v8a": "-arm64", "x86_64": "-x64"}  # ABI -> ffmpeg _build suffix
 PAGE = 16384
 SIXTY_FOUR_BIT = {"arm64-v8a", "x86_64"}
+FFMPEG_JNI = "libowntvffmpeg.so"
+FFMPEG_JNI_NEEDS = {"libavcodec.so", "libswresample.so", "libavutil.so"}
 
 # Filters whose registered symbol does not follow ff_{vf,af}_<name>.
 SYMBOL_OVERRIDES = {
@@ -67,11 +72,25 @@ def check_elf(abi, name, data, path):
         aligns = {seg["p_align"] for seg in elf.iter_segments() if seg["p_type"] == "PT_LOAD"}
         if abi in SIXTY_FOUR_BIT and min(aligns) < PAGE:
             fail(f"{abi}/{name}: PT_LOAD alignment {sorted(aligns)} < 16 KB")
+        needed = []
         for sec in elf.iter_sections():
             if isinstance(sec, DynamicSection):
                 needed = [t.needed for t in sec.iter_tags() if t.entry.d_tag == "DT_NEEDED"]
                 if "libvulkan.so" in needed:
                     fail(f"{abi}/{name}: depends on libvulkan.so")
+        build_id = any(note["n_type"] == "NT_GNU_BUILD_ID"
+                       for sec in elf.iter_sections() if sec["sh_type"] == "SHT_NOTE"
+                       for note in sec.iter_notes())
+        if not build_id:
+            fail(f"{abi}/{name}: no GNU build-id")
+        if name == FFMPEG_JNI:
+            missing = FFMPEG_JNI_NEEDS - set(needed)
+            if missing:
+                fail(f"{abi}/{name}: does not link {sorted(missing)}")
+            dynsym = elf.get_section_by_name(".dynsym")
+            if not dynsym or not any(s.name == "JNI_OnLoad" and s["st_shndx"] != "SHN_UNDEF"
+                                     for s in dynsym.iter_symbols()):
+                fail(f"{abi}/{name}: JNI_OnLoad not exported")
 
 
 def main(aar):
@@ -90,6 +109,8 @@ def main(aar):
 
     for abi in found:
         total_raw = total_deflated = 0
+        if FFMPEG_JNI not in os.listdir(os.path.join(jni, abi)):
+            fail(f"{abi}: {FFMPEG_JNI} missing")
         for name in sorted(os.listdir(os.path.join(jni, abi))):
             path = os.path.join(jni, abi, name)
             data = open(path, "rb").read()

@@ -87,6 +87,15 @@ itself, delete the patch; otherwise refresh it (`git revert --no-commit <commit>
   return, 0002 fails the decode after 3 s without progress so mpv falls back to software. Drop them
   only together, and only once FFmpeg bounds that loop itself; test: 10+ catch-up opens of an NPO 1
   programme (Stalker, Junior) on the TCL — none may freeze, and `MediaCodec stalled` may appear.
+  The 3 s count one unbroken stall: every frame out, input slot and flush restarts it.
+
+### ExoPlayer's FFmpeg audio decoder (`libowntvffmpeg.so`)
+
+`libmpv/src/main/cpp/ffmpeg_jni.cc` is Media3's `decoder_ffmpeg` JNI (tag 1.11.1), built on this
+library's FFmpeg; OwnTV_Core's `:player-core` holds the Java half and binds to it by class name. An
+FFmpeg bump that breaks it fails the build (it calls `avcodec`/`swresample` directly) — fix the C++
+here, keeping the class names. The contract (`inspect_aar.py`) checks the library, its links and
+`JNI_OnLoad`. When core bumps Media3, compare this file with that tag's copy.
 
 ## 4. Release this library
 
@@ -114,6 +123,8 @@ In `OwnTV_Core`, on that branch:
    - catch-up, ExoPlayer ⇄ mpv handover both ways, Multiview
    - image and text subtitles, surround and stereo, Night mode on mpv (by ear)
    - Quality menu on a multi-variant HLS channel
+   - ExoPlayer: `OwnTV-FfmpegAudio: available=true` in logcat, and a normal AAC/AC3 channel still on
+     the device decoder (`AudioOutputPolicy: audio decoder: c2.…`), not `ffmpeg…`
 4. Core changelog under the next `core-<version>`; the core release carries it into both apps through
    the usual pin-bump PRs.
 

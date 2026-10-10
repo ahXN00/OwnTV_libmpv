@@ -4,7 +4,7 @@ name: Publish
 #   1. the tag format check,
 #   2. the full build + contract check (build.yaml, the same as every push),
 #   3. the publish into OwnTV's public Maven repository (https://ahxn00.github.io/OwnTV_Core/maven),
-#   4. the GitHub Release with the AAR and the contract report,
+#   4. the GitHub Release with the AAR, the contract report and the unstripped .so zips,
 #   5. a "Pin libmpv" pull request on OwnTV_Core. It is NEVER merged automatically: a new engine
 #      changes playback and waits for the owner's device test (UPDATING.md step 5).
 # A published version is immutable: re-running on a tag that already published fails, by design.
@@ -50,6 +50,9 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           name: libmpv-release
+      - uses: actions/download-artifact@v8
+        with:
+          name: libmpv-symbols
       - name: Create the release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -61,11 +64,13 @@ jobs:
             echo
             echo "Pinned sources: see \`buildscripts/include/depinfo.sh\` at this tag."
             echo
+            echo "\`symbols-<abi>.zip\`: the same native libraries unstripped, for symbolising a crash (matched by build-id)."
+            echo
             echo '```'
             cat contract.txt
             echo '```'
           } > notes.md
-          gh release create "$GITHUB_REF_NAME" "libmpv-$VERSION.aar" --title "libmpv $VERSION" --notes-file notes.md --verify-tag
+          gh release create "$GITHUB_REF_NAME" "libmpv-$VERSION.aar" symbols-*.zip --title "libmpv $VERSION" --notes-file notes.md --verify-tag
 
   pin-core:
     name: Open the pin pull request on OwnTV_Core

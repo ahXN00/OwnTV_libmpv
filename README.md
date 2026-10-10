@@ -100,6 +100,11 @@ Every version is pinned in [`buildscripts/include/depinfo.sh`](buildscripts/incl
   ([`buildscripts/patches/ffmpeg/`](buildscripts/patches/ffmpeg)). **No encoders.** Muxers: `mpegts` and `matroska` only, so mpv's
   `stream-record` can write what it is already playing. Filters: the allowlist in
   [`buildscripts/scripts/ffmpeg.sh`](buildscripts/scripts/ffmpeg.sh), each commented with who needs it.
+- **`libowntvffmpeg.so`** — ExoPlayer's FFmpeg audio decoder (Media3 1.11.1's `ffmpeg_jni.cc`) on this
+  same FFmpeg, so OwnTV ships one FFmpeg. Its Java half lives in OwnTV_Core (`tv.own.owntv.player.ffmpeg`).
+- **Hardening** — every native library is built with `-fstack-protector-strong -D_FORTIFY_SOURCE=2`
+  and a build-id; each release carries the unstripped libraries (`symbols-<abi>.zip`). mbedTLS seeds
+  from `/dev/urandom` (its default `/dev/random` can stall HTTPS for minutes on old boxes).
 - **ABIs** — `armeabi-v7a`, `arm64-v8a`, `x86_64` (no 32-bit x86, which neither app ships). 64-bit
   libraries are 16 KB page-aligned.
 - **minSdk** 26. **Java package** `dev.jdtech.mpv`, kept from upstream on purpose.
@@ -111,9 +116,11 @@ Every version is pinned in [`buildscripts/include/depinfo.sh`](buildscripts/incl
 | `buildscripts/include/depinfo.sh` | `v_mpv` is a master commit, not a release |
 | `buildscripts/include/download-deps.sh` | mpv cloned blobless + checkout of the pinned commit |
 | `buildscripts/scripts/ffmpeg.sh` | filter allowlist, `mpegts`/`matroska` muxers |
-| `buildscripts/build.sh` | no 32-bit x86 |
+| `buildscripts/build.sh` | no 32-bit x86; stack protector + FORTIFY (`CPPFLAGS`), `--build-id` |
+| `buildscripts/scripts/mbedtls.sh` | `/dev/urandom` (as mpv-android `db7df51`); hardening flags |
 | `buildscripts/patches/mpv/0001-revert-hls-manifest-through-stream.patch` | undoes mpv `13a4bfbc1`: with it, IPTV panels answer 403 on every HLS segment |
-| `buildscripts/patches/ffmpeg/0001-…`, `0002-…` | a MediaCodec decoder that stalls (Realtek, TCL) fails after 3 s instead of locking the player; mpv then decodes in software |
+| `buildscripts/patches/ffmpeg/0001-…`, `0002-…` | a MediaCodec decoder that stalls (Realtek, TCL) fails after 3 s of one unbroken stall instead of locking the player; mpv then decodes in software |
+| `libmpv/src/main/cpp/ffmpeg_jni.cc`, `CMakeLists.txt` | new — `libowntvffmpeg.so`, ExoPlayer's FFmpeg audio decoder for OwnTV_Core |
 | `libmpv/src/main/cpp/main.cpp` | mpv's log follows the app's `msg-level` (upstream always asked for verbose) |
 | `libmpv/src/main/cpp/event.cpp`, `jni_utils.*`, `MPVLib.kt` | end of file reaches the app with its reason and error code (`EventObserver.endFile`, no-op by default) |
 | `libmpv/build.gradle.kts`, `build.gradle.kts`, `gradle/libs.versions.toml` | publishes `tv.own.owntv:libmpv` to OwnTV's Maven repository instead of Maven Central; `abiFilters` |
@@ -121,7 +128,7 @@ Every version is pinned in [`buildscripts/include/depinfo.sh`](buildscripts/incl
 | `tools/inspect_aar.py` | new — the build contract |
 | `tools/publish_pages.py` | new — writes into OwnTV's Maven repository (identical copy in OwnTV_Core) |
 | `tools/render_logo.py`, `extras/` | new — this README's logo |
-| `.github/workflows/*` | `build`, `publish`, `monthly-update` (upstream's `publish.yaml` removed) |
+| `.github/workflows/*` | `build`, `publish` (with unstripped `symbols-<abi>.zip`), `monthly-update` (upstream's `publish.yaml` removed) |
 
 Keep this table true: it is what makes an `upstream` merge reviewable.
 
@@ -131,7 +138,9 @@ Every CI build ends with `tools/inspect_aar.py`, which fails the build unless:
 
 - the AAR holds exactly the three ABIs, every 64-bit `.so` is 16 KB-aligned, nothing links `libvulkan`;
 - the mpv inside is the commit pinned in `depinfo.sh`;
-- every allowlisted filter is really compiled in (read from FFmpeg's generated `filter_list.c`).
+- every allowlisted filter is really compiled in (read from FFmpeg's generated `filter_list.c`);
+- `libowntvffmpeg.so` is in every ABI, links avcodec / swresample / avutil and exports `JNI_OnLoad`;
+- every `.so` has a build-id.
 
 It also prints the mpv/FFmpeg versions and the per-ABI size; the publish workflow puts that report in
 the GitHub Release notes.

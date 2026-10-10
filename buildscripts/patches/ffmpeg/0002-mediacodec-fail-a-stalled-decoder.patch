@@ -8,7 +8,9 @@ connection open, and every retry fails. Found with native stacks and /proc task 
 
 After 3 s with no input space and no output it now returns AVERROR_EXTERNAL and logs
 "MediaCodec stalled: ...". mpv counts it as a hardware decode failure and falls back to software
-(hwdec-software-fallback, default 3), so playback continues.
+(hwdec-software-fallback, default 3), so playback continues. The 3 s count only one unbroken
+stall: any frame out, any input space and every flush (seek, reload) start it over, so short
+normal pauses can never add up to a false failure (that would force 4K HDR onto software).
 
 TCL, NPO 1 catch-up: before, about 5 in 12 opens hung (and the app needed ~35 s to reach
 ExoPlayer); after, 11/11 played, 7 of them through this fallback, first picture as fast as the
@@ -17,7 +19,6 @@ clean runs (~5.5 s), 1080p50 software with 0 dropped frames.
 Drop it only once FFmpeg bounds this loop itself. Test as for 0001.
 
 diff --git a/libavcodec/mediacodecdec.c b/libavcodec/mediacodecdec.c
-index bc176d8..42816ae 100644
 --- a/libavcodec/mediacodecdec.c
 +++ b/libavcodec/mediacodecdec.c
 @@ -31,6 +31,7 @@
@@ -48,7 +49,16 @@ index bc176d8..42816ae 100644
  static av_cold int mediacodec_decode_close(AVCodecContext *avctx)
  {
      MediaCodecH264DecContext *s = avctx->priv_data;
-@@ -519,11 +531,23 @@ static int mediacodec_receive_frame(AVCodecContext *avctx, AVFrame *frame)
+@@ -502,6 +514,8 @@ static int mediacodec_receive_frame(AVCodecContext *avctx, AVFrame *frame)
+ 
+     /* poll for new frame */
+     ret = ff_mediacodec_dec_receive(avctx, s->ctx, frame, false);
++    if (ret >= 0)
++        s->stalled_since = 0;
+     if (ret != AVERROR(EAGAIN))
+         return ret;
+ 
+@@ -519,11 +533,23 @@ static int mediacodec_receive_frame(AVCodecContext *avctx, AVFrame *frame)
                   * return EAGAIN, which violate the design.
                   */
                  if (ff_AMediaCodec_infoTryAgainLater(s->ctx->codec, index) &&
@@ -73,3 +83,11 @@ index bc176d8..42816ae 100644
          }
  
          /* try to flush any buffered packet data */
+@@ -574,6 +600,7 @@ static void mediacodec_decode_flush(AVCodecContext *avctx)
+     MediaCodecH264DecContext *s = avctx->priv_data;
+ 
+     av_packet_unref(&s->buffered_pkt);
++    s->stalled_since = 0;
+ 
+     ff_mediacodec_dec_flush(avctx, s->ctx);
+ }
