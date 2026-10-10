@@ -10,18 +10,6 @@
         "/^buildscripts/include/depinfo\\.sh$/"
       ],
       "matchStrings": [
-        "v_lua=(?<currentValue>.*?)\\n"
-      ],
-      "datasourceTemplate": "github-tags",
-      "packageNameTemplate": "lua/lua",
-      "extractVersionTemplate": "^v?(?<version>.*)$"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": [
-        "/^buildscripts/include/depinfo\\.sh$/"
-      ],
-      "matchStrings": [
         "v_libunibreak=(?<currentValue>.*?)\\n"
       ],
       "datasourceTemplate": "github-releases",

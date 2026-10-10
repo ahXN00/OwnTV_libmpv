@@ -13,6 +13,8 @@ Checks:
   * libowntvffmpeg.so (ExoPlayer's FFmpeg audio decoder, used by OwnTV_Core) is in every ABI, links
     this AAR's own avcodec / swresample / avutil and exports JNI_OnLoad
   * every .so has a GNU build-id, so a crash stack can be matched to the release's unstripped files
+  * the decoders, demuxers and protocols IPTV playback cannot do without survived ffmpeg.sh's
+    denylists — read from FFmpeg's generated codec_list.c / demuxer_list.c / protocol_list.c
 It also prints the mpv / FFmpeg versions and the per-ABI size, for the release notes.
 """
 import os
@@ -31,6 +33,22 @@ PAGE = 16384
 SIXTY_FOUR_BIT = {"arm64-v8a", "x86_64"}
 FFMPEG_JNI = "libowntvffmpeg.so"
 FFMPEG_JNI_NEEDS = {"libavcodec.so", "libswresample.so", "libavutil.so"}
+
+# What a trimmed FFmpeg must still register (kind, generated list under _build*/, names). Audio: every
+# format OwnTV's TV channels and films carry, for mpv and ExoPlayer's FFmpeg decoder alike.
+MUST_HAVE = [
+    ("decoder", "libavcodec/codec_list.c", [
+        "h264", "hevc", "mpeg2video", "mpeg4", "vc1", "vp9", "libdav1d",
+        "h264_mediacodec", "hevc_mediacodec", "mpeg2_mediacodec", "mpeg4_mediacodec",
+        "vp8_mediacodec", "vp9_mediacodec", "av1_mediacodec",
+        "aac", "aac_latm", "ac3", "eac3", "dca", "truehd", "mlp", "mp2", "mp3", "opus", "flac",
+        "vorbis", "s302m", "pcm_bluray", "pcm_dvd",
+        "pgssub", "dvbsub", "dvdsub", "ccaption", "subrip", "ass", "webvtt", "movtext",
+        "mjpeg", "png",
+    ]),
+    ("demuxer", "libavformat/demuxer_list.c", ["hls", "dash", "mpegts", "matroska", "mov", "flv", "aac", "ac3"]),
+    ("protocol", "libavformat/protocol_list.c", ["http", "https", "tls", "tcp", "udp", "rtp", "crypto", "rtmp", "file"]),
+]
 
 # Filters whose registered symbol does not follow ff_{vf,af}_<name>.
 SYMBOL_OVERRIDES = {
@@ -139,6 +157,17 @@ def main(aar):
             fail(f"{abi}: filters not compiled in: {missing}")
         else:
             print(f"{abi}: all {len(wanted_filters)} allowlisted filters registered")
+        for kind, rel, names in MUST_HAVE:
+            path = os.path.join(BUILDSCRIPTS, "deps", "ffmpeg", f"_build{suffix}", rel)
+            if not os.path.isfile(path):
+                fail(f"{abi}: {path} missing (run after the native build)")
+                continue
+            listed = set(re.findall(rf"&ff_(\w+)_{kind}\b", open(path).read()))
+            missing = [n for n in names if n not in listed]
+            if missing:
+                fail(f"{abi}: {kind}s not compiled in: {missing}")
+            else:
+                print(f"{abi}: {len(listed)} {kind}s, all {len(names)} must-haves present")
 
     if errors:
         print(f"\n{len(errors)} contract failure(s)")

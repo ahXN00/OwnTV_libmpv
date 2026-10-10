@@ -93,13 +93,16 @@ The "ours" column changes with every release — update it in the same commit as
 
 Every version is pinned in [`buildscripts/include/depinfo.sh`](buildscripts/include/depinfo.sh).
 
-- **mpv** — a pinned commit on `master` (`v_mpv`), built with Lua, libass and libplacebo; no libcurl,
+- **mpv** — a pinned commit on `master` (`v_mpv`), built with libass and libplacebo; no Lua, no libavdevice, no libcurl,
   no Vulkan. OwnTV carries two patches on top ([`buildscripts/patches/mpv/`](buildscripts/patches/mpv)).
 - **FFmpeg** — a release tag (`v_ffmpeg`), `--enable-gpl --enable-version3`, MediaCodec + JNI,
   mbedTLS, dav1d, libxml2 (DASH), two carried MediaCodec patches
   ([`buildscripts/patches/ffmpeg/`](buildscripts/patches/ffmpeg)). **No encoders.** Muxers: `mpegts` and `matroska` only, so mpv's
   `stream-record` can write what it is already playing. Filters: the allowlist in
   [`buildscripts/scripts/ffmpeg.sh`](buildscripts/scripts/ffmpeg.sh), each commented with who needs it.
+  Trimmed by denylists in the same file: video/image decoders IPTV never meets (games, screen capture,
+  editing intermediates, still images) and unused protocols; no libavdevice. Every audio and subtitle
+  decoder stays.
 - **`libowntvffmpeg.so`** — ExoPlayer's FFmpeg audio decoder (Media3 1.11.1's `ffmpeg_jni.cc`) on this
   same FFmpeg, so OwnTV ships one FFmpeg. Its Java half lives in OwnTV_Core (`tv.own.owntv.player.ffmpeg`).
 - **Hardening** — every native library is built with `-fstack-protector-strong -D_FORTIFY_SOURCE=2`
@@ -113,18 +116,20 @@ Every version is pinned in [`buildscripts/include/depinfo.sh`](buildscripts/incl
 
 | File | Change |
 |---|---|
-| `buildscripts/include/depinfo.sh` | `v_mpv` is a master commit, not a release |
+| `buildscripts/include/depinfo.sh` | `v_mpv` is a master commit, not a release; no Lua; `v_gas_preprocessor` pinned |
 | `buildscripts/include/download-deps.sh` | mpv cloned blobless + checkout of the pinned commit |
-| `buildscripts/scripts/ffmpeg.sh` | filter allowlist, `mpegts`/`matroska` muxers |
-| `buildscripts/build.sh` | no 32-bit x86; stack protector + FORTIFY (`CPPFLAGS`), `--build-id` |
+| `buildscripts/scripts/ffmpeg.sh` | filter allowlist, `mpegts`/`matroska` muxers; video-decoder and protocol denylists, no libavdevice; armv7 tuned for Cortex-A53 |
+| `buildscripts/build.sh` | no 32-bit x86; stack protector + FORTIFY (`CPPFLAGS`), `--build-id`; `--exclude-libs`, `--gc-sections`, packed relocations |
 | `buildscripts/scripts/mbedtls.sh` | `/dev/urandom` (as mpv-android `db7df51`); hardening flags |
 | `buildscripts/patches/mpv/0001-revert-hls-manifest-through-stream.patch` | undoes mpv `13a4bfbc1`: with it, IPTV panels answer 403 on every HLS segment |
 | `buildscripts/patches/ffmpeg/0001-…`, `0002-…` | a MediaCodec decoder that stalls (Realtek, TCL) fails after 3 s of one unbroken stall instead of locking the player; mpv then decodes in software |
 | `libmpv/src/main/cpp/ffmpeg_jni.cc`, `CMakeLists.txt` | new — `libowntvffmpeg.so`, ExoPlayer's FFmpeg audio decoder for OwnTV_Core |
 | `libmpv/src/main/cpp/main.cpp` | mpv's log follows the app's `msg-level` (upstream always asked for verbose) |
 | `libmpv/src/main/cpp/event.cpp`, `jni_utils.*`, `MPVLib.kt` | end of file reaches the app with its reason and error code (`EventObserver.endFile`, no-op by default) |
-| `libmpv/build.gradle.kts`, `build.gradle.kts`, `gradle/libs.versions.toml` | publishes `tv.own.owntv:libmpv` to OwnTV's Maven repository instead of Maven Central; `abiFilters` |
-| `renovate.json` | the mpv rule removed (mpv is bumped by the monthly workflow) |
+| `libmpv/build.gradle.kts`, `build.gradle.kts`, `gradle/libs.versions.toml` | publishes `tv.own.owntv:libmpv` to OwnTV's Maven repository instead of Maven Central; `abiFilters`; `ndkVersion` read from `depinfo.sh` |
+| `buildscripts/scripts/mpv.sh` | `-Dlua=disabled -Dlibavdevice=disabled -Dbuild-date=false` |
+| `buildscripts/include/download-sdk.sh` | gas-preprocessor at the pinned commit; `IN_CI` defaults to 0 |
+| `renovate.json` | the mpv and Lua rules removed (mpv is bumped by the monthly workflow) |
 | `tools/inspect_aar.py` | new — the build contract |
 | `tools/publish_pages.py` | new — writes into OwnTV's Maven repository (identical copy in OwnTV_Core) |
 | `tools/render_logo.py`, `extras/` | new — this README's logo |
@@ -140,7 +145,9 @@ Every CI build ends with `tools/inspect_aar.py`, which fails the build unless:
 - the mpv inside is the commit pinned in `depinfo.sh`;
 - every allowlisted filter is really compiled in (read from FFmpeg's generated `filter_list.c`);
 - `libowntvffmpeg.so` is in every ABI, links avcodec / swresample / avutil and exports `JNI_OnLoad`;
-- every `.so` has a build-id.
+- every `.so` has a build-id;
+- the decoders, demuxers and protocols IPTV playback needs survived the trim (`MUST_HAVE`, read from
+  FFmpeg's generated `codec_list.c`, `demuxer_list.c` and `protocol_list.c`).
 
 It also prints the mpv/FFmpeg versions and the per-ABI size; the publish workflow puts that report in
 the GitHub Release notes.
@@ -221,8 +228,7 @@ This library is a thin layer over other people's excellent work. Thank you to al
 [FriBidi](https://github.com/fribidi/fribidi) ·
 [Fontconfig](https://gitlab.freedesktop.org/fontconfig/fontconfig) ·
 [libxml2](https://gitlab.gnome.org/GNOME/libxml2) ·
-[libunibreak](https://github.com/adah1972/libunibreak) ·
-[Lua](https://www.lua.org/) — see each project for its own license.
+[libunibreak](https://github.com/adah1972/libunibreak) — see each project for its own license.
 
 The logo's mpv-style mark is OwnTV's own flat drawing in mpv's colours; mpv's own logo belongs to the
 mpv project.

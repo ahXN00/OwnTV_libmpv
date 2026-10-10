@@ -52,10 +52,14 @@ loadarch () {
 	# and fortified libc calls. CPPFLAGS, not CFLAGS: a set CFLAGS replaces autotools' default
 	# "-g -O2" and mbedTLS's "-O2", and meson would put it after its own -O3. CPPFLAGS only adds.
 	# Meson, FFmpeg and autotools read it from here; mbedTLS takes it in mbedtls.sh.
-	export CPPFLAGS="-fstack-protector-strong -D_FORTIFY_SOURCE=2"
+	# Function/data sections let the linker below drop what nothing calls.
+	export CPPFLAGS="-fstack-protector-strong -D_FORTIFY_SOURCE=2 -ffunction-sections -fdata-sections"
 	# build-id: a crash's stack from a user's device can be matched to the unstripped .so files
-	# attached to that release (publish.yaml).
-	export LDFLAGS="-Wl,-O1,--icf=safe -Wl,-z,max-page-size=16384 -Wl,--build-id=sha1"
+	# attached to that release (publish.yaml). Size: --exclude-libs keeps the static dependencies
+	# (harfbuzz, libplacebo, libass, freetype, libxml2, …) from being exported out of libmpv.so, which
+	# then only exports mpv's API; --gc-sections drops unreferenced code; packed relocations shrink
+	# .rela.dyn (API 23+, we build for 26).
+	export LDFLAGS="-Wl,-O1,--icf=safe -Wl,-z,max-page-size=16384 -Wl,--build-id=sha1 -Wl,--exclude-libs,ALL -Wl,--gc-sections -Wl,--pack-dyn-relocs=android"
 	export AR=llvm-ar
 	export RANLIB=llvm-ranlib
 }

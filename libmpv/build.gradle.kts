@@ -11,7 +11,9 @@ android {
     namespace = "dev.jdtech.mpv"
     compileSdk = 36
     buildToolsVersion = "37.0.0"
-    ndkVersion = "30.0.16248370"
+    // One NDK pin for the native build and this module: depinfo.sh's v_ndk.
+    ndkVersion = rootProject.file("buildscripts/include/depinfo.sh").readLines()
+        .first { it.startsWith("v_ndk=") }.substringAfter("=").trim()
 
     defaultConfig {
         minSdk = 26

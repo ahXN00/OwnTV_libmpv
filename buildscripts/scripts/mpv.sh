@@ -16,10 +16,13 @@ fi
 
 unset CC CXX # meson wants these unset
 
+# No Lua: OwnTV drives mpv only through the client API and loads no script, while a Lua build starts
+# mpv's built-in scripts (stats, console, select, …) — a thread and an interpreter each — in every
+# instance, every hardReset and every Multiview pane.
 meson setup $build --cross-file "$prefix_dir"/crossfile.txt \
 	--default-library shared \
-	-Diconv=disabled -Dlua=enabled \
-	-Dlibmpv=true -Dcplayer=false \
+	-Diconv=disabled -Dlua=disabled -Dlibavdevice=disabled \
+	-Dlibmpv=true -Dcplayer=false -Dbuild-date=false \
 	-Dmanpage-build=disabled
 
 ninja -C $build -j$cores

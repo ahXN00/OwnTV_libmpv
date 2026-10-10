@@ -10,8 +10,9 @@ Nothing here is released without a device test on the TV and the phone.
 |---|---|---|
 | mpv master | `v_mpv` (commit) | **`monthly-update.yaml`**, 1st of the month, 06:00 UTC — opens a PR |
 | FFmpeg releases (`n9.0.x`, later `n9.1`, `n10`) | `v_ffmpeg` | Renovate PR (the Renovate app is installed on this repo only, in Interactive mode) |
-| libplacebo, libass, dav1d, mbedTLS, freetype, fribidi, harfbuzz, libunibreak, libxml2, fontconfig, Lua | `v_*` | Renovate PR |
-| NDK / SDK / Gradle / AGP | `depinfo.sh`, `libmpv/build.gradle.kts`, `gradle/` | Renovate PR |
+| libplacebo, libass, dav1d, mbedTLS, freetype, fribidi, harfbuzz, libunibreak, libxml2, fontconfig | `v_*` | Renovate PR |
+| Gradle / AGP | `gradle/` | Renovate PR |
+| NDK, SDK command-line tools, build-tools, CMake, gas-preprocessor | `v_ndk`, `v_sdk`, `v_sdk_build_tools`, `v_cmake`, `v_gas_preprocessor` | **by hand, step 2** — Renovate has no source matching `sdkmanager`'s package versions |
 | the upstream wrapper (jdtech) | the `upstream` remote | step 6 |
 
 ## 1. The mpv pull request
@@ -34,6 +35,12 @@ Merge Renovate's PRs if they are green. If Renovate is ever removed, check by ha
   (security fixes). A new major (`n9.1`, `n10.0`) is taken only once mpv master builds against it —
   the build proves it.
 - The rest: their release pages (`renovate.json` names each source).
+
+Always by hand, since Renovate cannot see them: the newest NDK, build-tools and CMake that
+`sdkmanager --list` offers, the newest command-line tools build (developer.android.com/studio,
+"Command line tools only"), and gas-preprocessor's newest commit
+(`gh api repos/FFmpeg/gas-preprocessor/commits/master --jq .sha`). `v_ndk` is the only NDK pin —
+`libmpv/build.gradle.kts` reads it from `depinfo.sh`.
 
 Every bump goes through a PR so `build.yaml` runs the build and the contract on it.
 

@@ -12,6 +12,12 @@ One section per release, plus a line for every monthly check (UPDATING.md, step 
   short normal pauses can no longer add up to a false switch to software decoding.
 - Hardening: every native library built with stack protector + `_FORTIFY_SOURCE=2`.
 - Every `.so` has a build-id; each GitHub Release carries the unstripped libraries per ABI.
+- Smaller: no Lua (mpv's built-in scripts no longer start in every player), no libavdevice, 191 game /
+  screen-capture / editing / still-image video decoders and 13 unused protocols dropped (every audio
+  and subtitle decoder kept), libraries linked with `--gc-sections`, `--exclude-libs` and packed
+  relocations. The build contract checks the decoders, demuxers and protocols IPTV needs.
+- armv7 tuned for Cortex-A53 instead of Cortex-A8; mpv built without a timestamp.
+- Build: gas-preprocessor pinned to a commit; the NDK version lives only in `depinfo.sh`.
 
 ## 2026.10.2 — 2026-10-08
 

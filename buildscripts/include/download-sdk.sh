@@ -4,7 +4,7 @@
 
 . ./include/path.sh # load $os var
 
-[ -z "$IN_CI" ] && TRAVIS=0 # skip steps not required for CI?
+[ -z "$IN_CI" ] && IN_CI=0 # 1 = skip the host package installs (CI and wsl_build.sh have done them)
 [ -z "$WGET" ] && WGET=wget # possibility of calling wget differently
 
 if [ "$os" == "linux" ]; then
@@ -68,7 +68,7 @@ echo y | sdkmanager \
 
 # gas-preprocessor
 mkdir -p bin
-$WGET "https://github.com/FFmpeg/gas-preprocessor/raw/master/gas-preprocessor.pl" \
+$WGET "https://github.com/FFmpeg/gas-preprocessor/raw/$v_gas_preprocessor/gas-preprocessor.pl" \
 	-O bin/gas-preprocessor.pl
 chmod +x bin/gas-preprocessor.pl
 
