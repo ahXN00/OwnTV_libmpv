@@ -2,7 +2,9 @@
 
 One section per release, plus a line for every monthly check (UPDATING.md, step 7).
 
-## Unreleased
+## 2026.10.3 — 2026-10-10
+
+Same mpv and FFmpeg as 2026.10.2.
 
 - New `libowntvffmpeg.so`: ExoPlayer's FFmpeg audio decoder (Media3 1.11.1) on this library's own
   FFmpeg, for OwnTV_Core. Checked by the build contract.

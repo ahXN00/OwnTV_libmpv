@@ -79,7 +79,7 @@ The "ours" column changes with every release — update it in the same commit as
 
 | | Official mpv | Upstream — jarnedemeulemeester/libmpv-android 1.0.0 | **Ours — OwnTV libmpv** |
 |---|---|---|---|
-| mpv | newest release **0.41.0** (2025-12-21); no point releases, fixes land on master only | 0.41.0 | **master `2a4eb8067`** (0.41.0 + 1,072 commits, 2026-09-23), two carried patches |
+| mpv | newest release **0.41.0** (2025-12-21); no point releases, fixes land on master only | 0.41.0 | **master `3186d369f`** (git-release-373, 2026-10-01), two carried patches |
 | FFmpeg | — (newest FFmpeg release: 9.0.2) | 8.1 | **9.0.2**, two carried patches |
 | FFmpeg filters | — | none | **29, allowlisted** (deinterlace, rotation, audio dynamics, EQ + plumbing) |
 | FFmpeg muxers / encoders | — | none / none | mpegts, matroska / none |
