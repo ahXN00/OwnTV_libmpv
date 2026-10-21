@@ -95,6 +95,22 @@ itself, delete the patch; otherwise refresh it (`git revert --no-commit <commit>
   only together, and only once FFmpeg bounds that loop itself; test: 10+ catch-up opens of an NPO 1
   programme (Stalker, Junior) on the TCL — none may freeze, and `MediaCodec stalled` may appear.
   The 3 s count one unbroken stall: every frame out, input slot and flush restarts it.
+- `mpv/0003-estimated-vf-fps-from-timestamp-gaps.patch` — on the direct MediaCodec path mpv keeps no
+  frame durations, so a file with no frame rate left `estimated-vf-fps` empty and Auto frame rate idle.
+  Drop it once mpv estimates the rate there itself; test: a Matroska film without DefaultDuration on
+  mpv logs `measured fps: est-vf-fps=… (no container-fps)`.
+- `ffmpeg/0003-http-a-finished-chunked-body-is-not-premature.patch` — with `reconnect_streamed=1` a
+  complete chunked HLS playlist was re-fetched until the open timed out. Drop it once FFmpeg treats a
+  final zero-size chunk as the end; test: `https://c.mjh.nz/abc-nsw.m3u8` opens on mpv.
+- `ffmpeg/0004-mediacodec-open-the-decoder-adaptive.patch` — the decoder is opened with max-width /
+  max-height (adaptive), as ExoPlayer does; without them the Realtek decoder showed H.264 above 30 fps
+  at 30 fps. Test: an H.264 1080p50 channel on mpv presents ~50 fps on the TCL.
+- `ffmpeg/0005-mediacodec-hevc-without-extradata.patch` — an HEVC stream with no extradata aborted the
+  process in FFmpeg's HEVC parser. Drop it once upstream checks for the empty buffer; test: an HEVC
+  catch-up archive opens on mpv without a crash.
+- `ffmpeg/0006-mediacodec-wait-for-the-first-keyframe.patch` — decoder option `wait_keyframe` (off by
+  default; core sets it for archives only) drops packets before the first keyframe. Test: 3 catch-up
+  opens of an H.264 programme that starts mid-GOP on the TCL stay on hardware (no `MediaCodec stalled`).
 
 ### ExoPlayer's FFmpeg audio decoder (`libowntvffmpeg.so`)
 

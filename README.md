@@ -79,8 +79,8 @@ The "ours" column changes with every release — update it in the same commit as
 
 | | Official mpv | Upstream — jarnedemeulemeester/libmpv-android 1.0.0 | **Ours — OwnTV libmpv** |
 |---|---|---|---|
-| mpv | newest release **0.41.0** (2025-12-21); no point releases, fixes land on master only | 0.41.0 | **master `3186d369f`** (git-release-373, 2026-10-01), two carried patches |
-| FFmpeg | — (newest FFmpeg release: 9.0.2) | 8.1 | **9.0.2**, two carried patches |
+| mpv | newest release **0.41.0** (2025-12-21); no point releases, fixes land on master only | 0.41.0 | **master `3186d369f`** (git-release-373, 2026-10-01), three carried patches |
+| FFmpeg | — (newest FFmpeg release: 9.0.2) | 8.1 | **9.0.2**, six carried patches |
 | FFmpeg filters | — | none | **29, allowlisted** (deinterlace, rotation, audio dynamics, EQ + plumbing) |
 | FFmpeg muxers / encoders | — | none / none | mpegts, matroska / none |
 | libplacebo · libass · dav1d | — | 7.360.1 · 0.17.4 · 1.5.3 | 7.360.1 · 0.17.5 · 1.5.4 |
@@ -94,9 +94,9 @@ The "ours" column changes with every release — update it in the same commit as
 Every version is pinned in [`buildscripts/include/depinfo.sh`](buildscripts/include/depinfo.sh).
 
 - **mpv** — a pinned commit on `master` (`v_mpv`), built with libass and libplacebo; no Lua, no libavdevice, no libcurl,
-  no Vulkan. OwnTV carries two patches on top ([`buildscripts/patches/mpv/`](buildscripts/patches/mpv)).
+  no Vulkan. OwnTV carries three patches on top ([`buildscripts/patches/mpv/`](buildscripts/patches/mpv)).
 - **FFmpeg** — a release tag (`v_ffmpeg`), `--enable-gpl --enable-version3`, MediaCodec + JNI,
-  mbedTLS, dav1d, libxml2 (DASH), two carried MediaCodec patches
+  mbedTLS, dav1d, libxml2 (DASH), six carried patches (MediaCodec and HTTP)
   ([`buildscripts/patches/ffmpeg/`](buildscripts/patches/ffmpeg)). **No encoders.** Muxers: `mpegts` and `matroska` only, so mpv's
   `stream-record` can write what it is already playing. Filters: the allowlist in
   [`buildscripts/scripts/ffmpeg.sh`](buildscripts/scripts/ffmpeg.sh), each commented with who needs it.
@@ -122,7 +122,13 @@ Every version is pinned in [`buildscripts/include/depinfo.sh`](buildscripts/incl
 | `buildscripts/build.sh` | no 32-bit x86; stack protector + FORTIFY (`CPPFLAGS`), `--build-id`; `--exclude-libs`, `--gc-sections`, packed relocations |
 | `buildscripts/scripts/mbedtls.sh` | `/dev/urandom` (as mpv-android `db7df51`); hardening flags |
 | `buildscripts/patches/mpv/0001-revert-hls-manifest-through-stream.patch` | undoes mpv `13a4bfbc1`: with it, IPTV panels answer 403 on every HLS segment |
+| `buildscripts/patches/mpv/0002-audiotrack-no-spin-on-underrun.patch` | an audio underrun no longer burns a whole CPU core in a write loop |
+| `buildscripts/patches/mpv/0003-estimated-vf-fps-from-timestamp-gaps.patch` | a film whose file states no frame rate still reports one, so Auto frame rate can switch |
 | `buildscripts/patches/ffmpeg/0001-…`, `0002-…` | a MediaCodec decoder that stalls (Realtek, TCL) fails after 3 s of one unbroken stall instead of locking the player; mpv then decodes in software |
+| `buildscripts/patches/ffmpeg/0003-http-a-finished-chunked-body-is-not-premature.patch` | HLS with chunked playlists opens instead of re-fetching a complete playlist until the open times out |
+| `buildscripts/patches/ffmpeg/0004-mediacodec-open-the-decoder-adaptive.patch` | H.264 above 30 fps plays at full rate on the TCL (the decoder is opened with max-width/max-height, as ExoPlayer does) |
+| `buildscripts/patches/ffmpeg/0005-mediacodec-hevc-without-extradata.patch` | an HEVC stream joined mid-way opens instead of aborting the app |
+| `buildscripts/patches/ffmpeg/0006-mediacodec-wait-for-the-first-keyframe.patch` | new decoder option `wait_keyframe`: a catch-up archive that starts mid-GOP stays on the hardware decoder |
 | `libmpv/src/main/cpp/ffmpeg_jni.cc`, `CMakeLists.txt` | new — `libowntvffmpeg.so`, ExoPlayer's FFmpeg audio decoder for OwnTV_Core |
 | `libmpv/src/main/cpp/main.cpp` | mpv's log follows the app's `msg-level` (upstream always asked for verbose) |
 | `libmpv/src/main/cpp/event.cpp`, `jni_utils.*`, `MPVLib.kt` | end of file reaches the app with its reason and error code (`EventObserver.endFile`, no-op by default) |

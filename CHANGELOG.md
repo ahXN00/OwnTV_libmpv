@@ -2,6 +2,27 @@
 
 One section per release, plus a line for every monthly check (UPDATING.md, step 7).
 
+## 2026.10.4 — 2026-10-21
+
+Same mpv and FFmpeg as 2026.10.3.
+
+- Fix (FFmpeg patch 0006): an H.264 catch-up archive that starts mid-GOP stays on the hardware decoder.
+  New MediaCodec option `wait_keyframe` (off by default; OwnTV_Core sets it for archives only) drops the
+  packets before the first keyframe; the Realtek decoder (TCL) stalled on them, and 0002 then moved the
+  archive to software. TCL, same programme: 3/3 stalled → software, ~6 s to the picture; with it 3/3
+  hardware, 2.5–5 s.
+- Fix (mpv patch 0003): a film whose file states no frame rate reports one on mpv. On the direct
+  MediaCodec path mpv kept no frame durations, so `estimated-vf-fps` stayed empty and Auto frame rate
+  had nothing to switch to; it now falls back to the frames' own timestamp gaps (playback unchanged).
+- Fix (FFmpeg patch 0005): an HEVC catch-up archive no longer crashes the app on mpv. A stream joined
+  mid-way reached the MediaCodec decoder with no extradata, and FFmpeg's HEVC parser aborted the
+  process on the empty buffer; the decoder now opens as when the extradata holds no parameter sets.
+- Fix (FFmpeg patch 0004): H.264 above 30 fps plays at its full rate on mpv. The decoder is opened
+  with `max-width` / `max-height`, as ExoPlayer does; without them the Realtek decoder (TCL) drew
+  through the GPU at 30 fps. 1080p50 30 → 50 fps, 1080p59.94 30 → 58 fps.
+- Fix (FFmpeg patch 0003): HLS with chunked playlists (Akamai MediaPackage, public Australian
+  channels) opens on mpv; a complete chunked response is no longer re-fetched until the open times out.
+
 ## 2026.10.3 — 2026-10-10
 
 Same mpv and FFmpeg as 2026.10.2.

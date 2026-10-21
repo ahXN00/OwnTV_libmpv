@@ -10,6 +10,10 @@ A timeout-0 call is answered at once, so this asks with 0 and does the wait here
 for the same total time the caller asked for. On its own it does not end the freeze (the decoder
 still stops producing output; see 0002) - it makes the call return, so 0002 can act.
 
+It stays on the direct (surface) path too: measured 2026-10-19 against an engine without it, the
+polling costs no CPU and no frames there, and the same stall (0002's "MediaCodec stalled") was also
+seen on the direct path on the TCL.
+
 Drop it only together with 0002, and only once FFmpeg bounds the receive loop itself.
 Test: 10+ catch-up opens of an NPO 1 programme (Stalker, Junior) on the TCL, no freeze.
 
