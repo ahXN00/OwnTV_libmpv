@@ -12,7 +12,7 @@ v_gas_preprocessor=ac1836309c2e77023c228b7184485597286289d3
 
 v_libunibreak=8_0
 v_libass=0.17.5
-v_harfbuzz=14.5.0
+v_harfbuzz=15.0.0
 v_fribidi=1.0.17
 v_freetype=2-14-3
 v_libxml2=2.15.4
