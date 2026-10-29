@@ -16,7 +16,7 @@ android {
         .first { it.startsWith("v_ndk=") }.substringAfter("=").trim()
 
     defaultConfig {
-        minSdk = 26
+        minSdk = 25
         consumerProguardFiles("proguard-rules.pro")
         // Must match buildscripts/build.sh `archs`: the JNI glue links against the prebuilt libmpv.
         ndk { abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86_64") }
