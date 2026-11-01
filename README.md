@@ -79,11 +79,11 @@ The "ours" column changes with every release — update it in the same commit as
 
 | | Official mpv | Upstream — jarnedemeulemeester/libmpv-android 1.0.0 | **Ours — OwnTV libmpv** |
 |---|---|---|---|
-| mpv | newest release **0.41.0** (2025-12-21); no point releases, fixes land on master only | 0.41.0 | **master `3186d369f`** (git-release-373, 2026-10-01), three carried patches |
+| mpv | newest release **0.41.0** (2025-12-21); no point releases, fixes land on master only | 0.41.0 | **master `914a11c30`** (git-release-659, 2026-11-01), three carried patches |
 | FFmpeg | — (newest FFmpeg release: 9.0.2) | 8.1 | **9.0.2**, six carried patches |
 | FFmpeg filters | — | none | **29, allowlisted** (deinterlace, rotation, audio dynamics, EQ + plumbing) |
 | FFmpeg muxers / encoders | — | none / none | mpegts, matroska / none |
-| libplacebo · libass · dav1d | — | 7.360.1 · 0.17.4 · 1.5.3 | 7.360.1 · 0.17.5 · 1.5.4 |
+| libplacebo · libass · dav1d | — | 7.360.1 · 0.17.4 · 1.5.3 | 7.387.0 · 0.17.5 · 1.5.4 |
 | Several instances at once | — | yes | yes (same JNI) |
 | ABIs | — | armeabi-v7a, arm64-v8a, x86, x86_64 | armeabi-v7a, arm64-v8a, x86_64 |
 | Published as | — | `dev.jdtech.mpv:libmpv` (Maven Central) | `tv.own.owntv:libmpv` (OwnTV Maven, no login) |

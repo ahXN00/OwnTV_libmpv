@@ -2,6 +2,19 @@
 
 One section per release, plus a line for every monthly check (UPDATING.md, step 7).
 
+## 2026.11.0 — not released yet
+
+Monthly check 2026-11-01: mpv master moved 286 commits, FFmpeg 9.0.2 is still the newest release.
+
+- mpv `3186d369f` → `914a11c30` (git-release-659, 2026-11-01). None of its interface changes touch an
+  option OwnTV sets; `vo_mediacodec_embed` and `ao_audiotrack` unchanged.
+- mpv patch 0001 refreshed: mpv added an `rtp` line next to its context, nothing else changed.
+- libplacebo 7.387.0, harfbuzz 15.0.0, freetype 2.15.0, fribidi 1.0.18; Gradle 9.8.2, Android Gradle
+  Plugin 9.5.0; CI builds on Java 25.
+- TCL G10, test build: H.264 720p25 live 25 fps / 0 dropped (before: 0); HEVC 4K50 HDR10 live 50 fps,
+  4–9 dropped at start then none (before: 1–3); Xtream HLS (B4U Music) plays on mpv with no 403;
+  H.264 catch-up 25 fps / 0 dropped.
+
 ## 2026.10.4 — 2026-10-21
 
 Same mpv and FFmpeg as 2026.10.3.

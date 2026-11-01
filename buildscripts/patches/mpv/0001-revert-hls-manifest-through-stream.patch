@@ -27,8 +27,8 @@ index 9536e62d8..a5707817b 100644
 +    {"hls", .no_stream = true, .clear_filepos = true, .no_ext_picky = true},
 +    {"dash", .no_stream = true, .clear_filepos = true},
      {"sdp", .clear_filepos = true, .is_network = true, .no_seek = true},
+     {"rtp", .clear_filepos = true, .is_network = true, .no_seek = true},
      {"mpeg", .use_stream_ids = true},
-     {"mpegts", .use_stream_ids = true},
 @@ -1450,14 +1450,12 @@ static int demux_open_lavf(demuxer_t *demuxer, enum demux_check check)
              MP_VERBOSE(demuxer, "Option extension_picky=0 was set due to known FFmpeg bugs\n");
      }
