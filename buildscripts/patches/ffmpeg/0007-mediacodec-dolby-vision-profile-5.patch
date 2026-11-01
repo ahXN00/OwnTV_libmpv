@@ -1,0 +1,131 @@
+OwnTV: open a Dolby Vision profile 5 stream on the device's Dolby Vision decoder.
+
+Why: FFmpeg asks MediaCodec for "video/hevc" for every HEVC stream. Dolby Vision profile 5 has no
+HDR10 or SDR base layer, so a plain HEVC decoder outputs its IPTPQc2 picture without the Dolby
+reshaping: green and purple over the whole frame. Found on the TCL G10 with a 4K profile 5 episode
+(dvhe.05.06): green/purple on mpv (c2.realtek.video.hevc.decoder), correct on ExoPlayer, which asks
+for "video/dolby-vision" and got c2.realtek.video.dvhe.stn.decoder.
+
+For an HEVC stream whose Dolby Vision configuration record (AV_PKT_DATA_DOVI_CONF in the coded side
+data; mpv's Matroska demuxer and lavf both attach it) says profile 5, the decoder is opened as
+"video/dolby-vision" with profile DolbyVisionProfileDvheStn, as ExoPlayer does, when the device
+lists a decoder for that profile. The profile is also what selects the decoder: a Dolby Vision
+decoder lists only Dolby Vision profiles. No such decoder, or any other profile (7, 8, 9 carry a
+base layer an HEVC decoder shows correctly): the stream opens as before.
+
+Test: a profile 5 film on mpv on a device with a Dolby Vision decoder shows correct colours and logs
+"Dolby Vision profile 5: using <decoder>"; HDR10 and SDR HEVC still open on the HEVC decoder.
+
+diff --git a/libavcodec/mediacodecdec.c b/libavcodec/mediacodecdec.c
+index 7461ebb..a0b5e2e 100644
+--- a/libavcodec/mediacodecdec.c
++++ b/libavcodec/mediacodecdec.c
+@@ -27,6 +27,7 @@
+ 
+ #include "libavutil/avassert.h"
+ #include "libavutil/common.h"
++#include "libavutil/dovi_meta.h"
+ #include "libavutil/mem.h"
+ #include "libavutil/opt.h"
+ #include "libavutil/intreadwrite.h"
+@@ -336,10 +337,45 @@ static int common_set_extradata(AVCodecContext *avctx, FFAMediaFormat *format)
+ }
+ #endif
+ 
++#if CONFIG_HEVC_MEDIACODEC_DECODER
++/* OwnTV: MediaCodecInfo.CodecProfileLevel.DolbyVisionProfileDvheStn (Dolby Vision profile 5). */
++#define MEDIACODEC_DV_PROFILE_DVHE_STN 0x20
++
++/* OwnTV: the MediaCodec Dolby Vision profile to open a profile 5 stream with, when this device has
++ * a decoder for it, else 0. Profile 5 has no HDR10 or SDR base layer: a plain HEVC decoder outputs
++ * its IPTPQc2 picture unconverted, green and purple. Profiles 7, 8 and 9 carry a base layer an HEVC
++ * decoder shows correctly, so they keep it. */
++static int dolby_vision_profile(AVCodecContext *avctx)
++{
++    const AVPacketSideData *sd = av_packet_side_data_get(avctx->coded_side_data,
++                                                         avctx->nb_coded_side_data,
++                                                         AV_PKT_DATA_DOVI_CONF);
++    const AVDOVIDecoderConfigurationRecord *cfg;
++    char *name;
++
++    if (!sd || sd->size < sizeof(*cfg))
++        return 0;
++    cfg = (const AVDOVIDecoderConfigurationRecord *)sd->data;
++    if (cfg->dv_profile != 5)
++        return 0;
++
++    name = ff_AMediaCodecList_getCodecNameByType("video/dolby-vision",
++                                                 MEDIACODEC_DV_PROFILE_DVHE_STN, 0, avctx);
++    if (!name) {
++        av_log(avctx, AV_LOG_INFO, "Dolby Vision profile 5: no decoder for it, using HEVC\n");
++        return 0;
++    }
++    av_log(avctx, AV_LOG_INFO, "Dolby Vision profile 5: using %s\n", name);
++    av_free(name);
++    return MEDIACODEC_DV_PROFILE_DVHE_STN;
++}
++#endif
++
+ static av_cold int mediacodec_decode_init(AVCodecContext *avctx)
+ {
+     int ret;
+     int sdk_int;
++    int dv_profile = 0;
+ 
+     const char *codec_mime = NULL;
+ 
+@@ -377,7 +413,8 @@ static av_cold int mediacodec_decode_init(AVCodecContext *avctx)
+ #endif
+ #if CONFIG_HEVC_MEDIACODEC_DECODER
+     case AV_CODEC_ID_HEVC:
+-        codec_mime = "video/hevc";
++        dv_profile = dolby_vision_profile(avctx);
++        codec_mime = dv_profile ? "video/dolby-vision" : "video/hevc";
+ 
+         ret = hevc_set_extradata(avctx, format);
+         if (ret < 0)
+@@ -461,6 +498,8 @@ static av_cold int mediacodec_decode_init(AVCodecContext *avctx)
+     }
+ 
+     ff_AMediaFormat_setString(format, "mime", codec_mime);
++    if (dv_profile)
++        ff_AMediaFormat_setInt32(format, "profile", dv_profile);
+ 
+     if (avctx->codec_type == AVMEDIA_TYPE_VIDEO) {
+         ff_AMediaFormat_setInt32(format, "width", avctx->width);
+@@ -481,6 +520,7 @@ static av_cold int mediacodec_decode_init(AVCodecContext *avctx)
+ 
+     s->ctx->delay_flush = s->delay_flush;
+     s->ctx->use_ndk_codec = s->use_ndk_codec;
++    s->ctx->dv_profile = dv_profile;
+ 
+     if ((ret = ff_mediacodec_dec_init(avctx, s->ctx, codec_mime, format)) < 0) {
+         s->ctx = NULL;
+diff --git a/libavcodec/mediacodecdec_common.c b/libavcodec/mediacodecdec_common.c
+index e1b3050..643b6ac 100644
+--- a/libavcodec/mediacodecdec_common.c
++++ b/libavcodec/mediacodecdec_common.c
+@@ -773,6 +773,9 @@ static int mediacodec_dec_get_video_codec(AVCodecContext *avctx, MediaCodecDecCo
+     }
+ 
+     profile = ff_AMediaCodecProfile_getProfileFromAVCodecContext(avctx);
++    /* OwnTV: a Dolby Vision decoder lists Dolby Vision profiles, never the HEVC one. */
++    if (s->dv_profile > 0)
++        profile = s->dv_profile;
+     if (profile < 0) {
+         av_log(avctx, AV_LOG_WARNING, "Unsupported or unknown profile\n");
+     }
+diff --git a/libavcodec/mediacodecdec_common.h b/libavcodec/mediacodecdec_common.h
+index 0ab2903..31b47ee 100644
+--- a/libavcodec/mediacodecdec_common.h
++++ b/libavcodec/mediacodecdec_common.h
+@@ -71,6 +71,9 @@ typedef struct MediaCodecDecContext {
+     atomic_int serial;
+ 
+     bool use_ndk_codec;
++
++    /* OwnTV: MediaCodec Dolby Vision profile the decoder is chosen by, 0 when the stream is not. */
++    int dv_profile;
+ } MediaCodecDecContext;
+ 
+ int ff_mediacodec_dec_init(AVCodecContext *avctx,

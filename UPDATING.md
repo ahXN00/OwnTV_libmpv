@@ -111,6 +111,11 @@ itself, delete the patch; otherwise refresh it (`git revert --no-commit <commit>
 - `ffmpeg/0006-mediacodec-wait-for-the-first-keyframe.patch` — decoder option `wait_keyframe` (off by
   default; core sets it for archives only) drops packets before the first keyframe. Test: 3 catch-up
   opens of an H.264 programme that starts mid-GOP on the TCL stay on hardware (no `MediaCodec stalled`).
+- `ffmpeg/0007-mediacodec-dolby-vision-profile-5.patch` — an HEVC stream whose Dolby Vision record says
+  profile 5 opens as `video/dolby-vision` (profile DvheStn) when the device lists a decoder for it;
+  a plain HEVC decoder shows profile 5 green and purple. Drop it once FFmpeg picks the Dolby Vision
+  decoder itself; test: a profile 5 film on mpv on the TCL logs `c2.realtek.video.dvhe.stn.decoder`,
+  shows correct colours and the TV's Dolby Vision badge; HDR10 HEVC still opens on the HEVC decoder.
 
 ### ExoPlayer's FFmpeg audio decoder (`libowntvffmpeg.so`)
 

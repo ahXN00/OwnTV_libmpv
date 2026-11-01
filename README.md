@@ -80,7 +80,7 @@ The "ours" column changes with every release — update it in the same commit as
 | | Official mpv | Upstream — jarnedemeulemeester/libmpv-android 1.0.0 | **Ours — OwnTV libmpv** |
 |---|---|---|---|
 | mpv | newest release **0.41.0** (2025-12-21); no point releases, fixes land on master only | 0.41.0 | **master `914a11c30`** (git-release-659, 2026-11-01), three carried patches |
-| FFmpeg | — (newest FFmpeg release: 9.0.2) | 8.1 | **9.0.2**, six carried patches |
+| FFmpeg | — (newest FFmpeg release: 9.0.2) | 8.1 | **9.0.2**, seven carried patches |
 | FFmpeg filters | — | none | **29, allowlisted** (deinterlace, rotation, audio dynamics, EQ + plumbing) |
 | FFmpeg muxers / encoders | — | none / none | mpegts, matroska / none |
 | libplacebo · libass · dav1d | — | 7.360.1 · 0.17.4 · 1.5.3 | 7.387.0 · 0.17.5 · 1.5.4 |
@@ -96,7 +96,7 @@ Every version is pinned in [`buildscripts/include/depinfo.sh`](buildscripts/incl
 - **mpv** — a pinned commit on `master` (`v_mpv`), built with libass and libplacebo; no Lua, no libavdevice, no libcurl,
   no Vulkan. OwnTV carries three patches on top ([`buildscripts/patches/mpv/`](buildscripts/patches/mpv)).
 - **FFmpeg** — a release tag (`v_ffmpeg`), `--enable-gpl --enable-version3`, MediaCodec + JNI,
-  mbedTLS, dav1d, libxml2 (DASH), six carried patches (MediaCodec and HTTP)
+  mbedTLS, dav1d, libxml2 (DASH), seven carried patches (MediaCodec and HTTP)
   ([`buildscripts/patches/ffmpeg/`](buildscripts/patches/ffmpeg)). **No encoders.** Muxers: `mpegts` and `matroska` only, so mpv's
   `stream-record` can write what it is already playing. Filters: the allowlist in
   [`buildscripts/scripts/ffmpeg.sh`](buildscripts/scripts/ffmpeg.sh), each commented with who needs it.
@@ -129,6 +129,7 @@ Every version is pinned in [`buildscripts/include/depinfo.sh`](buildscripts/incl
 | `buildscripts/patches/ffmpeg/0004-mediacodec-open-the-decoder-adaptive.patch` | H.264 above 30 fps plays at full rate on the TCL (the decoder is opened with max-width/max-height, as ExoPlayer does) |
 | `buildscripts/patches/ffmpeg/0005-mediacodec-hevc-without-extradata.patch` | an HEVC stream joined mid-way opens instead of aborting the app |
 | `buildscripts/patches/ffmpeg/0006-mediacodec-wait-for-the-first-keyframe.patch` | new decoder option `wait_keyframe`: a catch-up archive that starts mid-GOP stays on the hardware decoder |
+| `buildscripts/patches/ffmpeg/0007-mediacodec-dolby-vision-profile-5.patch` | a Dolby Vision profile 5 stream opens on the device's Dolby Vision decoder (correct colours instead of green/purple) |
 | `libmpv/src/main/cpp/ffmpeg_jni.cc`, `CMakeLists.txt` | new — `libowntvffmpeg.so`, ExoPlayer's FFmpeg audio decoder for OwnTV_Core |
 | `libmpv/src/main/cpp/main.cpp` | mpv's log follows the app's `msg-level` (upstream always asked for verbose) |
 | `libmpv/src/main/cpp/event.cpp`, `jni_utils.*`, `MPVLib.kt` | end of file reaches the app with its reason and error code (`EventObserver.endFile`, no-op by default) |

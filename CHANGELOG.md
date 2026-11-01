@@ -8,6 +8,10 @@ Monthly check 2026-11-01: mpv master moved 286 commits, FFmpeg 9.0.2 is still th
 
 - mpv `3186d369f` → `914a11c30` (git-release-659, 2026-11-01). None of its interface changes touch an
   option OwnTV sets; `vo_mediacodec_embed` and `ao_audiotrack` unchanged.
+- Fix (FFmpeg patch 0007): Dolby Vision profile 5 films and episodes show correct colours on mpv
+  instead of green and purple. They open on the device's Dolby Vision decoder when it has one, as on
+  ExoPlayer; other HEVC is unchanged. TCL, 4K `dvhe.05.06` episode: Dolby Vision badge, 23.976 fps,
+  2 dropped at start.
 - mpv patch 0001 refreshed: mpv added an `rtp` line next to its context, nothing else changed.
 - libplacebo 7.387.0, harfbuzz 15.0.0, freetype 2.15.0, fribidi 1.0.18; Gradle 9.8.2, Android Gradle
   Plugin 9.5.0; CI builds on Java 25.
