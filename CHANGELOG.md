@@ -2,7 +2,7 @@
 
 One section per release, plus a line for every monthly check (UPDATING.md, step 7).
 
-## 2026.11.0 — not released yet
+## 2026.11.0 — 2026-11-01
 
 Monthly check 2026-11-01: mpv master moved 286 commits, FFmpeg 9.0.2 is still the newest release.
 
