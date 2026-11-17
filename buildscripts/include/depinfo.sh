@@ -19,7 +19,7 @@ v_libxml2=2.15.4
 v_fontconfig=2.18.3
 v_mbedtls=3.6.7
 v_libplacebo=7.387.0
-v_dav1d=1.5.4
+v_dav1d=1.5.5
 v_ffmpeg=9.0.2
 # mpv is pinned to a commit on master, not a release tag: mpv makes no point releases, so every fix
 # after a release reaches users only through master. Bumped monthly — see UPDATING.md.
